@@ -7,7 +7,7 @@ A stand-alone ESAPI WPF application (MVVM) that:
 3. Computes the **mean HU** of that structure by iterating the CT voxels it contains.
 4. Computes the **scan FOV** from the CT image's resolution and matrix size.
 5. Takes a user-entered **implant diameter (mm)**.
-6. Bilinearly interpolates your Stainless Steel and Titanium reference tables (diameter × FOV)
+6. Bilinearly interpolates Stainless Steel and Titanium reference tables (diameter × FOV)
    and reports which material's expected HU is closer to the measured mean HU, flagging the
    result as unreliable if it isn't within **±1000 HU** of either curve.
 
@@ -27,13 +27,13 @@ ImplantMaterialID/
   Services/FakeEsapiPatientService.cs     <- canned data for UI development without Eclipse
 ```
 
-## Threading model (important - this is what the "Atomic access violation" crash was)
+## Threading model
 
-ESAPI 18.x's own guidance is explicit: *stand-alone executables must create `Application` on a
+ESAPI 18.x's guidance is explicit: stand-alone executables must create `Application` on a
 single STA thread, and must never touch ESAPI objects from a worker thread, `Task`, background
-thread, async continuation, or PLINQ.* An earlier version of this app violated that by calling
-into ESAPI via `Task.Run(...)` from the ViewModel, and it crashed exactly as that rule predicts:
-Varian's native `vmod` layer detects the cross-thread access and hard-aborts with
+thread, async continuation, or PLINQ. An earlier version of this app violated that by calling
+into ESAPI via `Task.Run(...)` from the ViewModel, and it crashed exactly as that rule
+predicts: Varian's native `vmod` layer detects the cross-thread access and hard-aborts with
 `Reason = Failed assertion` / `Atomic access violation` rather than risking silent corruption.
 
 The fix, reflected in the current code:
@@ -48,8 +48,8 @@ The fix, reflected in the current code:
   runs on, for the lifetime of the app.
 - **`StaEsapiPatientService`** is what the UI actually talks to. It implements the async
   `IEsapiPatientService` contract, and every method body is just "marshal this call onto the
-  ESAPI thread and await the result." The ViewModel can `await` these calls completely
-  normally - it doesn't need to know ESAPI's threading rules exist.
+  ESAPI thread and await the result." The ViewModel can `await` these calls normally - it
+  doesn't need to know ESAPI's threading rules exist.
 
 This keeps the UI responsive during the slow mean-HU voxel loop (it runs on its own thread,
 not the UI thread) while still giving ESAPI the single consistent thread it requires - it just
@@ -58,10 +58,10 @@ plain data (DTOs, exceptions) across the thread boundary, never live ESAPI objec
 nothing left for the two threads to disagree about.
 
 **This was validated, not just reasoned about.** Before wiring it back into the app, this
-threading model was tested against a stub ESAPI surface that simulates the exact same
-assertion Varian's `vmod` layer performs - it throws if any stub `Application`/`Patient`/
-`Structure`/`Image` object is touched from a thread other than the one that "created" it. Test
-coverage included: the normal load → select → calculate flow; confirming `await` continuations
+threading model was tested against a stub ESAPI surface that simulates the same assertion
+Varian's `vmod` layer performs - it throws if any stub `Application`/`Patient`/`Structure`/
+`Image` object is touched from a thread other than the one that "created" it. Coverage
+included: the normal load → select → calculate flow; confirming `await` continuations
 correctly return to the UI thread (using a WPF-Dispatcher-like `SynchronizationContext`, so the
 test is representative of the real app rather than an artifact of running in a console); a
 missing-patient error surfacing as a normal .NET exception rather than a crash; twenty
@@ -83,9 +83,9 @@ property at the top of `ImplantMaterialID.csproj`:
 <EsapiInstallDir>C:\Program Files (x86)\Varian\RTM\18.1\esapi\API\</EsapiInstallDir>
 ```
 
-This is set for ESAPI 18.1 (confirmed .NET Framework 4.8, which matches the `TargetFramework`
-already set below it). If you build on a different workstation, or move to a different ESAPI
-version later, this is the only line you should need to change - update the path (and
+This is set for ESAPI 18.1 (.NET Framework 4.8, matching the `TargetFramework` already set
+below it). If you build on a different workstation, or move to a different ESAPI version
+later, this is the only line you should need to change - update the path (and
 `TargetFramework` too, if the new version needs a different one) and both references will
 pick it up automatically.
 
@@ -114,11 +114,11 @@ sign-off path:
 - **Where it runs.** It needs to run on a machine that can reach your Varian database/App
   services the same way an Eclipse workstation does.
 
-## Two things to validate before trusting results clinically
+## Validating version-specific ESAPI behaviour
 
-I've flagged these in code comments too, because they're the two places this kind of ESAPI
-code most commonly goes wrong across versions/sites (this is separate from the threading fix
-above, which is already validated):
+These are the two places this kind of ESAPI code most commonly breaks across versions or
+sites (separate from the threading fix above, which is already validated) - flagged in code
+comments too:
 
 1. **`Patient.StructureSets`** (in `EsapiPatientService.GetAllStructureSets`) is a direct
    convenience property added in later ESAPI versions. If it's not available in yours,
@@ -135,11 +135,12 @@ above, which is already validated):
 
 The mean-HU routine restricts the voxel search to each slice's contour bounding box (with a
 1-pixel margin) rather than scanning the whole image, for performance, then tests true
-containment with `Structure.IsPointInsideSegment`.
+containment with an in-process point-in-polygon test against the structure's own contour
+points.
 
 ## Reference tables (`Models/MaterialReferenceData.cs`)
 
-Transcribed directly from the two tables you supplied:
+Transcribed from the site's own scanner characterisation tables.
 
 **Stainless steel (HU)**
 
@@ -166,12 +167,13 @@ Transcribed directly from the two tables you supplied:
 | 16 | 7352 | 7892  | 8007  |
 
 These are only valid for the scanner/reconstruction/HU-calibration setup they were measured
-on. If you re-characterise on a different scanner or kernel, just update the arrays in
+on. To re-characterise on a different scanner or kernel, update the arrays in
 `MaterialReferenceData.cs` - nothing else needs to change, since `BilinearInterpolator` reads
 the axis arrays' lengths directly.
 
 **Interpolation & decision logic** (`Models/BilinearInterpolator.cs`,
 `Models/ImplantMaterialClassifier.cs`):
+
 - Standard bilinear interpolation (two nested linear interpolations across diameter, then
   FOV), so an exact hit on a tabulated diameter/FOV reproduces the table value exactly.
 - Diameters or FOVs outside the tabulated range are **clamped to the nearest edge**, not
@@ -179,17 +181,17 @@ the axis arrays' lengths directly.
   CT-number-vs-size curve isn't reliable outside the characterised range.
 - The material whose interpolated HU is numerically closer to the measured mean HU is
   reported as the best match. If that best-match difference still exceeds the **1000 HU**
-  tolerance you specified, the result is reported as **Indeterminate** rather than forcing a
-  guess, with a warning explaining why (bad contour, metal artefact, wrong diameter entered,
-  or a material outside these two tables).
+  tolerance, the result is reported as **Indeterminate** rather than forcing a guess, with a
+  warning explaining why (bad contour, metal artefact, wrong diameter entered, or a material
+  outside these two tables).
 - The 1000 HU tolerance is a named constant
   (`ImplantMaterialClassifier.DefaultAgreementToleranceHu`) and is also an optional parameter
-  on `Classify(...)`, so you can loosen/tighten it per call without touching the logic.
+  on `Classify(...)`, so it can be loosened/tightened per call without touching the logic.
 
-## Trying the UI without Eclipse
+## Running without Eclipse
 
 `Views/MainWindow.xaml.cs` constructs `new StaEsapiPatientService()` in its constructor. Swap
-that for `new FakeEsapiPatientService()` to click through the whole flow (patient -> structure
-set -> structure -> calculate) with canned data while you're setting up ESAPI access or
-demoing the tool. `FakeEsapiPatientService` has no real ESAPI objects, so it doesn't need (and
-doesn't use) the dedicated STA thread.
+that for `new FakeEsapiPatientService()` to click through the whole flow (patient → structure
+set → structure → calculate) with canned data while setting up ESAPI access or demoing the
+tool. `FakeEsapiPatientService` has no real ESAPI objects, so it doesn't need (and doesn't
+use) the dedicated STA thread.

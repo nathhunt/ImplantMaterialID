@@ -1,15 +1,13 @@
 namespace ImplantMaterialID.Models
 {
     /// <summary>
-    /// Static reference data transcribed from the site's own scanner characterisation tables
-    /// (mean HU of a cylindrical implant of a given diameter, reconstructed at a given FOV,
-    /// for Stainless Steel and Titanium). These MUST be regenerated for your own scanner /
-    /// reconstruction kernel / extended-HU calibration curve - the numbers here are only as
-    /// good as the two source tables they were copied from.
+    /// Reference data transcribed from the site's scanner characterisation tables (mean HU of
+    /// a cylindrical implant at a given diameter and FOV, for Stainless Steel and Titanium).
+    /// Regenerate these arrays for your own scanner/reconstruction kernel/HU calibration -
+    /// results are only as good as the source tables they were copied from.
     ///
-    /// Grid layout: rows = Diameter (mm), columns = FOV (mm).
-    /// Both axes are stored in ASCENDING order (required by <see cref="BilinearInterpolator"/>),
-    /// even though the source tables listed FOV as 700 / 550 / 400 (descending).
+    /// Grid layout: rows = Diameter (mm), columns = FOV (mm). Both axes are stored in
+    /// ASCENDING order, as required by <see cref="BilinearInterpolator"/>.
     /// </summary>
     public static class MaterialReferenceData
     {
@@ -20,15 +18,8 @@ namespace ImplantMaterialID.Models
         public static readonly double[] FovsMm = { 400, 550, 700 };
 
         /// <summary>
-        /// Stainless steel mean HU, [diameterIndex, fovIndex].
-        /// Source table (Dia / 700 / 550 / 400):
-        ///   4  13243 21325 23983
-        ///   6  15691 20786 21824
-        ///   8  16093 19587 20034
-        ///  10  16040 18218 18632
-        ///  12  15349 17197 17476
-        ///  14  14964 16230 16530
-        ///  16  13763 14773 14989
+        /// Stainless steel mean HU, [diameterIndex, fovIndex]. Columns are reordered to
+        /// ascending FOV (400/550/700) from the source table's descending order.
         /// </summary>
         public static readonly double[,] StainlessSteelHu =
         {
@@ -42,15 +33,8 @@ namespace ImplantMaterialID.Models
         };
 
         /// <summary>
-        /// Titanium mean HU, [diameterIndex, fovIndex].
-        /// Source table (Dia / 700 / 550 / 400):
-        ///   4  7075 11393 12812
-        ///   6  8383 11104 11659
-        ///   8  8597 10464 10703
-        ///  10  8569  9733  9954
-        ///  12  8200  9187  9336
-        ///  14  7994  8670  8831
-        ///  16  7352  7892  8007
+        /// Titanium mean HU, [diameterIndex, fovIndex]. Same column reordering as
+        /// <see cref="StainlessSteelHu"/>.
         /// </summary>
         public static readonly double[,] TitaniumHu =
         {
