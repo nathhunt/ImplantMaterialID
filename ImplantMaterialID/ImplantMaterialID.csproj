@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- ESAPI (VMS.TPS.Common.Model.API) targets .NET Framework and ships as x64-only DLLs.
+         Change TargetFramework below to match the framework your Eclipse/ARIA version was
+         built against if different (net472 works for ESAPI v15.x-v16.x; check your
+         "ESAPI release notes" PDF for the exact version). -->
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <OutputType>WinExe</OutputType>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <RootNamespace>ImplantMaterialID</RootNamespace>
+    <AssemblyName>ImplantMaterialID</AssemblyName>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AppConfig>App.config</AppConfig>
+
+    <!--
+      Points straight at the installed ESAPI 18.1 API folder, so nothing needs to be copied
+      into the project. If you move to a different workstation or ESAPI version, this is the
+      only line you should need to change.
+    -->
+    <EsapiInstallDir>C:\Program Files (x86)\Varian\RTM\18.1\esapi\API\</EsapiInstallDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      ESAPI references.
+      These DLLs are NOT redistributable and are not on NuGet - they ship with the
+      Eclipse Treatment Planning System / ARIA installation. Both referenced directly from
+      the installed location via $(EsapiInstallDir) above.
+    -->
+    <Reference Include="VMS.TPS.Common.Model.API">
+      <HintPath>$(EsapiInstallDir)VMS.TPS.Common.Model.API.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="VMS.TPS.Common.Model.Types">
+      <HintPath>$(EsapiInstallDir)VMS.TPS.Common.Model.Types.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>
