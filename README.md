@@ -155,6 +155,12 @@ next to itself by default. If your site deploys the exe somewhere else (e.g. a s
 used by every workstation), point the plugin at it with the `IMPLANTMATERIALID_EXE_PATH`
 environment variable instead of keeping them side by side.
 
+For local development, `EclipseLauncher.csproj`'s `CopyStandaloneExeNextToPlugin` target does
+this automatically - building the whole solution (which builds `ImplantMaterialID` first, then
+copies its output next to the plugin's) is enough to keep them side by side in
+`ImplantMaterialID.EclipseLauncher\bin\x64\<Configuration>\net48\` without a manual copy step.
+This is a dev convenience only; it has no effect on how you deploy to a clinical workstation.
+
 **Naming - this part is not optional.** Eclipse's script browser (*Tools > Scripts*) only
 recognises a compiled binary plugin whose filename ends in `.esapi.dll` - a plain `.dll` is
 silently omitted from the list, even when you browse to the correct folder, with no error
