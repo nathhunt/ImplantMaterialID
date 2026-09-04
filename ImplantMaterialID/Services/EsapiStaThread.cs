@@ -9,17 +9,12 @@ namespace ImplantMaterialID.Services
     /// A single, long-lived STA thread that every ESAPI call is funneled through.
     ///
     /// ESAPI's native layer (vmod) asserts if its objects are touched from more than one
-    /// thread - see the "Atomic access violation" crash this class exists to prevent.
-    /// The rule from Varian's own ESAPI 18.x guidance is: create Application on a single STA
-    /// thread, and never call into ESAPI from a worker thread, Task, background thread,
-    /// async continuation, or PLINQ.
-    ///
-    /// This does NOT have to be the WPF UI thread (which is also STA, but is a different
-    /// thread) - it just has to be *a* single, consistent STA thread for the whole
-    /// application's lifetime. Running ESAPI on its own dedicated thread, rather than the UI
-    /// thread, means the UI stays responsive (progress bar, etc.) while a slow ESAPI call
-    /// (e.g. the mean-HU voxel loop) is in flight, since the two threads only ever exchange
-    /// plain data (DTOs / exceptions), never live ESAPI objects.
+    /// thread - see README "Threading model" for the "Atomic access violation" crash this
+    /// class exists to prevent. This does NOT have to be the WPF UI thread (which is also STA,
+    /// but a different thread) - it just has to be *a* single, consistent STA thread for the
+    /// whole application's lifetime. Keeping ESAPI off the UI thread means the UI stays
+    /// responsive while a slow ESAPI call (e.g. the mean-HU voxel loop) is in flight, since the
+    /// two threads only ever exchange plain data (DTOs / exceptions), never live ESAPI objects.
     /// </summary>
     public sealed class EsapiStaThread : IDisposable
     {
@@ -35,9 +30,9 @@ namespace ImplantMaterialID.Services
 
         private void RunLoop()
         {
-            // Runs for the lifetime of the app: dequeues and executes one delegate at a time,
-            // always on this same thread. No WPF Dispatcher/message pump is needed here -
-            // ESAPI's own (native) login dialog pumps its own modal message loop when shown.
+            // Dequeues and executes one delegate at a time, always on this same thread, for the
+            // lifetime of the app. No WPF Dispatcher/message pump is needed - ESAPI's own
+            // (native) login dialog pumps its own modal message loop when shown.
             foreach (var action in _queue.GetConsumingEnumerable())
             {
                 action();

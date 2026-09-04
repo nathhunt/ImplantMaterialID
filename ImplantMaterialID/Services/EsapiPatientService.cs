@@ -17,23 +17,12 @@ namespace ImplantMaterialID.Services
     /// itself; it trusts its caller (StaEsapiPatientService) to do that. Do not call it
     /// directly from a ViewModel, Task.Run, or any other thread.
     ///
-    /// IMPORTANT - version-dependent API surface:
-    /// This class was written against the general shape of ESAPI v15/v16/v18. A few calls are
-    /// known to vary between ESAPI versions and MUST be checked against your own version's
-    /// "Eclipse Scripting API Reference Guide" PDF before clinical use:
-    ///   1. Patient.StructureSets - added as a direct convenience property in later ESAPI
-    ///      versions. If your version doesn't have it, replace GetAllStructureSets() below
-    ///      with a traversal via patient.Courses -> course.PlanSetups -> plan.StructureSet
-    ///      (de-duplicated by StructureSet.Id/UID).
-    ///   2. Image.GetVoxels(int z, int[,] buffer) - the exact buffer index order
-    ///      ([x, y] vs [y, x]) has differed across API versions. Validate this on a structure
-    ///      of known, uniform composition (e.g. a water-equivalent phantom insert) before
-    ///      trusting the mean HU numbers clinically - see README "Validating the voxel loop".
-    ///   3. ComputeMeanHu's containment test assumes the image's X/Y directions are axis-
-    ///      aligned (no gantry/couch tilt baked into the acquisition) - see the method's own
-    ///      remarks below. This matches the assumption the bounding-box crop already made,
-    ///      but is now load-bearing for correctness, not just for cropping, so validate it on
-    ///      the same phantom used for check #2.
+    /// Written against the general shape of ESAPI v15/v16/v18. Three calls are known to vary
+    /// between versions and must be checked against your own "Eclipse Scripting API Reference
+    /// Guide" before clinical use - see README "Validating version-specific ESAPI behaviour":
+    /// Patient.StructureSets (GetAllStructureSets below), the Image.GetVoxels buffer index
+    /// order (ComputeMeanHu below), and the axis-aligned assumption ComputeMeanHu's containment
+    /// test makes (see that method's remarks).
     /// </summary>
     internal sealed class EsapiPatientServiceCore : IDisposable
     {
@@ -42,12 +31,10 @@ namespace ImplantMaterialID.Services
 
         public EsapiPatientServiceCore()
         {
-            // Parameterless CreateApplication() is the standard entry point for a standalone
-            // (non-plugin) ESAPI executable; it will prompt for Varian credentials interactively
-            // if the current Windows identity isn't already authorised. If your site instead
-            // requires explicit credentials, use the
-            // Application.CreateApplication(string userId, System.Security.SecureString password)
-            // overload here instead.
+            // Standard entry point for a standalone (non-plugin) ESAPI executable; prompts for
+            // Varian credentials interactively if the current Windows identity isn't already
+            // authorised. If your site requires explicit credentials, use
+            // Application.CreateApplication(string userId, SecureString password) instead.
             _app = Application.CreateApplication();
         }
 
@@ -157,10 +144,9 @@ namespace ImplantMaterialID.Services
 
         private static IEnumerable<StructureSet> GetAllStructureSets(Patient patient)
         {
-            // Preferred path (ESAPI v15.6+): Patient exposes StructureSets directly.
-            // If this property is unavailable in your ESAPI version, replace this method body
-            // with the Courses -> PlanSetups -> StructureSet traversal described in the class
-            // remarks above.
+            // Preferred path (ESAPI v15.6+): Patient exposes StructureSets directly. If this
+            // property is unavailable in your version, replace this method body with a
+            // Courses -> PlanSetups -> StructureSet traversal, de-duplicated by StructureSet.UID.
             return patient.StructureSets
                 .Where(ss => ss != null)
                 .GroupBy(ss => ss.UID)
@@ -170,38 +156,24 @@ namespace ImplantMaterialID.Services
         /// <summary>
         /// Computes the mean HU of a structure by iterating CT voxels slice-by-slice, restricted
         /// to the structure's contour bounding box on each slice for performance, and testing
-        /// containment with an in-process scanline (ray-casting) point-in-polygon test against
-        /// the structure's own contour points. Raw voxel values are converted to HU via
-        /// Image.VoxelToDisplayValue, which applies the CT's own calibration curve (this is what
-        /// allows the extended/metal HU range used in the reference tables, rather than the
-        /// diagnostic -1000..3000 HU window).
+        /// containment with an in-process scanline (ray-casting) point-in-polygon test
+        /// (https://en.wikipedia.org/wiki/Point_in_polygon) against the structure's own contour
+        /// points, rather than calling the ESAPI/COM Structure.IsPointInsideSegment per pixel.
+        /// Multiple contours on one slice (e.g. a structure with a hole) combine correctly under
+        /// the even-odd rule used here, matching how DICOM RT contours are defined.
         ///
-        /// Performance notes (see git history / PR description for the "before" version):
-        ///   - The voxel buffer is allocated once and reused across slices via GetVoxels,
-        ///     instead of being re-allocated on every slice that has contours.
-        ///   - Containment is no longer tested by calling Structure.IsPointInsideSegment once
-        ///     per pixel in the bounding box. That call crosses into ESAPI/COM, and the old code
-        ///     paid that interop cost for every pixel in the box regardless of whether it was
-        ///     anywhere near the structure. Instead, each slice's contours are converted to
-        ///     pixel-index coordinates once, and a standard scanline point-in-polygon test
-        ///     (https://en.wikipedia.org/wiki/Point_in_polygon) determines the included x-range
-        ///     directly for each row. Multiple contours on one slice (e.g. a structure with a
-        ///     hole) combine correctly under the even-odd rule used here, which is the same rule
-        ///     DICOM RT contours are defined against - no special-casing needed for holes.
-        ///   - VoxelToDisplayValue is still called once per *accepted* voxel (not per candidate
-        ///     voxel), so its cost now scales with the structure's actual area rather than its
-        ///     bounding box. It is deliberately NOT short-circuited with a cached linear
-        ///     (slope/intercept) formula, even though that's a common CT-HU pattern: this
-        ///     project's whole point is extended/metal HU handling, which is exactly the case
-        ///     where the calibration curve is most likely to be non-linear or piecewise. Don't
-        ///     add that shortcut without confirming linearity across your full site's HU range.
+        /// Raw voxel values are converted to HU via Image.VoxelToDisplayValue, which applies the
+        /// CT's own calibration curve - this is what allows the extended/metal HU range used in
+        /// the reference tables, rather than the diagnostic -1000..3000 HU window. It is
+        /// deliberately not short-circuited with a cached linear (slope/intercept) formula:
+        /// extended/metal HU is exactly the range where that curve is most likely to be
+        /// non-linear or piecewise. Don't add that shortcut without confirming linearity across
+        /// your site's full HU range.
         ///
         /// Correctness note: converting contour points to pixel-index space via
         /// (point - origin) / resolution assumes the image's X/Y directions are axis-aligned
-        /// (no tilt). The original bounding-box crop already made this same assumption for
-        /// selecting which pixels to test; this version extends it to the containment test
-        /// itself, so it's now load-bearing rather than just an optimization for the crop
-        /// window. Validate against known geometry (see class remarks) before clinical use.
+        /// (no gantry/couch tilt baked into the acquisition). Validate against known geometry
+        /// (see class remarks) before clinical use.
         /// </summary>
         private static (double meanHu, long voxelCount) ComputeMeanHu(Structure structure, VMS.TPS.Common.Model.API.Image image)
         {
@@ -215,8 +187,7 @@ namespace ImplantMaterialID.Services
             int xSize = image.XSize;
             int ySize = image.YSize;
 
-            // Allocated once, reused every slice - GetVoxels overwrites it in place, so there's
-            // no need to allocate a fresh (potentially ~1 MB+) array per slice.
+            // Allocated once, reused every slice - GetVoxels overwrites it in place.
             var buffer = new int[xSize, ySize];
 
             for (int z = 0; z < image.ZSize; z++)
@@ -273,10 +244,9 @@ namespace ImplantMaterialID.Services
                 if (iMin > iMax || jMin > jMax)
                     continue;
 
-                // NOTE: verify this buffer's index order against your ESAPI version - see the
-                // class-level remarks. If mean HU comes out obviously wrong (e.g. background air
-                // values for a structure you know is metal), the fix is almost always to swap the
-                // two indices used to read `buffer` below (and its allocation dimensions).
+                // Verify this buffer's index order against your ESAPI version (class remarks).
+                // If mean HU comes out obviously wrong (e.g. background air values for a
+                // structure you know is metal), swap the indices used to read `buffer` below.
                 image.GetVoxels(z, buffer);
 
                 var crossings = new List<double>();
