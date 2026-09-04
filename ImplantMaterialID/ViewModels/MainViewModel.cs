@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using ImplantMaterialID.Models;
 using ImplantMaterialID.Services;
@@ -125,6 +126,27 @@ namespace ImplantMaterialID.ViewModels
 
         // --- Operations ---------------------------------------------------
 
+        // Set by InitializeFromLaunchAsync, consumed and cleared the next time LoadPatientAsync
+        // finishes loading structure sets. Not used at all for a normal manually-triggered load.
+        private string _pendingAutoSelectStructureSetId;
+
+        /// <summary>
+        /// Pre-populates and loads a patient (and, if given, auto-selects a structure set) on
+        /// behalf of the Eclipse plugin launcher - see MainWindow's constructor. If
+        /// <paramref name="structureSetId"/> doesn't match any structure set this patient turns
+        /// out to have (or is null, e.g. nothing was open in Eclipse), the user simply picks one
+        /// manually, exactly as they would with no launch arguments at all.
+        /// </summary>
+        public async Task InitializeFromLaunchAsync(string patientId, string structureSetId)
+        {
+            if (string.IsNullOrWhiteSpace(patientId))
+                return;
+
+            PatientId = patientId;
+            _pendingAutoSelectStructureSetId = structureSetId;
+            await LoadPatientAsync();
+        }
+
         private async Task LoadPatientAsync()
         {
             IsBusy = true;
@@ -135,6 +157,11 @@ namespace ImplantMaterialID.ViewModels
             SelectedStructureSet = null;
             SelectedStructure = null;
 
+            // Consumed up front (not just on success) so a failed load never leaves a stale
+            // auto-select id around to affect a later, unrelated manual retry.
+            var autoSelectId = _pendingAutoSelectStructureSetId;
+            _pendingAutoSelectStructureSetId = null;
+
             try
             {
                 var patientIdSnapshot = PatientId;
@@ -143,7 +170,33 @@ namespace ImplantMaterialID.ViewModels
                 foreach (var s in sets)
                     StructureSets.Add(s);
 
-                StatusMessage = $"Loaded {sets.Count} structure set(s) for patient '{patientIdSnapshot}'. Select one below.";
+                if (string.IsNullOrWhiteSpace(autoSelectId))
+                {
+                    StatusMessage = $"Loaded {sets.Count} structure set(s) for patient '{patientIdSnapshot}'. Select one below.";
+                }
+                else
+                {
+                    var match = sets.FirstOrDefault(s => string.Equals(s.Id, autoSelectId, StringComparison.OrdinalIgnoreCase));
+                    if (match != null)
+                    {
+                        StatusMessage = $"Loaded {sets.Count} structure set(s) for patient '{patientIdSnapshot}'. Auto-selected structure set '{match.Id}' from Eclipse.";
+
+                        // Set the backing field directly and await LoadStructuresAsync ourselves,
+                        // rather than going through the SelectedStructureSet setter (which fires
+                        // LoadStructuresAsync fire-and-forget) - that would let this method's own
+                        // `finally` clear IsBusy before the structure load it just kicked off has
+                        // actually finished. Structures/SelectedStructure are already cleared from
+                        // the top of this method, so there's nothing else the setter would do.
+                        _selectedStructureSet = match;
+                        OnPropertyChanged(nameof(SelectedStructureSet));
+                        await LoadStructuresAsync(match.Id);
+                    }
+                    else
+                    {
+                        StatusMessage = $"Loaded {sets.Count} structure set(s) for patient '{patientIdSnapshot}'. " +
+                            $"The structure set open in Eclipse ('{autoSelectId}') wasn't found here - select one below.";
+                    }
+                }
             }
             catch (Exception ex)
             {

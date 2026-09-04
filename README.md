@@ -25,6 +25,10 @@ ImplantMaterialID/
   Services/EsapiStaThread.cs              <- the dedicated single STA thread ESAPI runs on
   Services/StaEsapiPatientService.cs      <- marshals every call onto that thread; this is what the UI talks to
   Services/FakeEsapiPatientService.cs     <- canned data for UI development without Eclipse
+  Services/LaunchArguments.cs             <- parses --patient/--structureset (see "Launching from Eclipse" below)
+ImplantMaterialID.EclipseLauncher/
+  ImplantMaterialID.EclipseLauncher.csproj
+  Script.cs                               <- Eclipse binary plugin that launches the exe above
 ```
 
 ## Threading model
@@ -113,6 +117,48 @@ sign-off path:
   `Application.CreateApplication(string userId, SecureString password)` overload.
 - **Where it runs.** It needs to run on a machine that can reach your Varian database/App
   services the same way an Eclipse workstation does.
+
+## Launching from Eclipse (optional binary plugin)
+
+The exe can be run entirely on its own (patient ID typed in by hand, as described above), but it
+can also be launched *from inside Eclipse*, pre-populated with whichever patient/structure set is
+already open there, via a small companion Eclipse binary plugin:
+`ImplantMaterialID.EclipseLauncher/Script.cs`.
+
+**How it works.** The plugin implements ESAPI's standard compiled-script contract
+(`VMS.TPS.Script.Execute(ScriptContext context)`) and does only one thing: it reads
+`context.Patient?.Id` and `context.StructureSet?.Id` - whatever is currently open in Eclipse,
+either of which may be null - and starts `ImplantMaterialID.exe` as a new process with those as
+command-line arguments:
+
+```
+ImplantMaterialID.exe --patient MRN12345 --structureset CT_1
+```
+
+`App.xaml.cs` parses these (`Services/LaunchArguments.cs`) and hands them to
+`MainViewModel.InitializeFromLaunchAsync`, which loads that patient automatically and, if the
+structure set ID matches one this patient actually has, selects it too - exactly the same
+`LoadPatientCommand`/`SelectedStructureSet` flow a manual user would drive, just triggered
+programmatically. If nothing was open in Eclipse (or the structure set ID doesn't match), that
+field is simply left for the user to fill in by hand - there is no special-case UI, it behaves
+exactly like a normal manual launch from that point on.
+
+The plugin does **not** and cannot share Eclipse's live ESAPI `Application`/`Patient` objects with
+the launched process - live objects can't cross a process boundary. That's not a limitation in
+practice: the launched exe re-authenticates and re-opens the patient itself via its own
+`Application.CreateApplication()`, which is normally silent (see "Login" above) since it inherits
+the same Windows identity Eclipse already trusted.
+
+**Deployment.** Build both projects and copy `ImplantMaterialID.exe` (with its dependencies) and
+`ImplantMaterialID.EclipseLauncher.dll` to the same folder - the plugin looks for the exe next to
+itself by default. If your site deploys the exe somewhere else (e.g. a shared network path used
+by every workstation), point the plugin at it with the `IMPLANTMATERIALID_EXE_PATH` environment
+variable instead of keeping them side by side.
+
+**Approval.** This plugin is a separate compiled binary from the standalone exe, so it needs its
+own sign-off under *Eclipse > Tools > Script Approval* (or your site's equivalent) in addition to
+- not instead of - the exe's own approval described above. Once approved, add it to Eclipse's
+script list like any other binary plugin and run it from the Scripts menu.
 
 ## Validating version-specific ESAPI behaviour
 

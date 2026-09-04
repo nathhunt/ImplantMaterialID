@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Eclipse binary plugin (compiled "Script" DLL), loaded and run in-process by Eclipse -
+         see Script.cs. Its target framework/platform must match the ESAPI DLLs it references,
+         same as the standalone ImplantMaterialID project; keep the two in sync. -->
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF> <!-- only for System.Windows.MessageBox error dialogs; no UI is built here -->
+    <OutputType>Library</OutputType>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <RootNamespace>ImplantMaterialID.EclipseLauncher</RootNamespace>
+    <AssemblyName>ImplantMaterialID.EclipseLauncher</AssemblyName>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+
+    <!--
+      Same idea as ImplantMaterialID.csproj's EsapiInstallDir: points straight at the installed
+      ESAPI 18.1 API folder. Update this (and TargetFramework above, if needed) if you build on a
+      different workstation or move to a different ESAPI version.
+    -->
+    <EsapiInstallDir>C:\Program Files (x86)\Varian\RTM\18.1\esapi\API\</EsapiInstallDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- See ImplantMaterialID.csproj for why these are referenced this way (not NuGet, not
+         redistributable, ship with the Eclipse/ARIA installation). -->
+    <Reference Include="VMS.TPS.Common.Model.API">
+      <HintPath>$(EsapiInstallDir)VMS.TPS.Common.Model.API.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="VMS.TPS.Common.Model.Types">
+      <HintPath>$(EsapiInstallDir)VMS.TPS.Common.Model.Types.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>
