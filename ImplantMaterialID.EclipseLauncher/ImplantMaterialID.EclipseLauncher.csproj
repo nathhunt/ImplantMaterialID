@@ -11,7 +11,13 @@
     <PlatformTarget>x64</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
     <RootNamespace>ImplantMaterialID.EclipseLauncher</RootNamespace>
-    <AssemblyName>ImplantMaterialID.EclipseLauncher</AssemblyName>
+    <!-- Eclipse's script browser (Tools > Scripts) only recognises a compiled binary plugin if
+         its filename ends in ".esapi.dll" - a plain ".dll" is silently not listed, even when
+         browsing the correct folder. AssemblyName becomes the output filename (the SDK appends
+         ".dll" itself), so this must end in ".esapi", giving
+         ImplantMaterialID.EclipseLauncher.esapi.dll as the built output. Do not "clean up" this
+         name - it's a hard Eclipse requirement, not a naming preference. -->
+    <AssemblyName>ImplantMaterialID.EclipseLauncher.esapi</AssemblyName>
     <Nullable>disable</Nullable>
     <LangVersion>latest</LangVersion>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -35,6 +41,28 @@
       <HintPath>$(EsapiInstallDir)VMS.TPS.Common.Model.Types.dll</HintPath>
       <Private>False</Private>
     </Reference>
+
+    <!-- Not a real assembly reference (ReferenceOutputAssembly=false) - this project deliberately
+         doesn't link against the exe. It's here only so MSBuild builds ImplantMaterialID first
+         when you build the solution, so the CopyStandaloneExe target below always has something
+         current to copy. -->
+    <ProjectReference Include="..\ImplantMaterialID\ImplantMaterialID.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
+
+  <!--
+    Script.cs (LocateExecutable) looks for ImplantMaterialID.exe next to this plugin's own DLL by
+    default. Building the two projects separately won't put it there, so - purely as a local dev
+    convenience when you build the whole solution - copy the exe project's output alongside this
+    one's after every build. This has no effect on production deployment: there, follow the
+    README's "Deployment" instructions (copy manually, or use IMPLANTMATERIALID_EXE_PATH).
+  -->
+  <Target Name="CopyStandaloneExeNextToPlugin" AfterTargets="Build">
+    <ItemGroup>
+      <_StandaloneExeOutputs Include="..\ImplantMaterialID\bin\x64\$(Configuration)\$(TargetFramework)\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_StandaloneExeOutputs)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="'@(_StandaloneExeOutputs)' != ''" />
+  </Target>
 
 </Project>
