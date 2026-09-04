@@ -27,8 +27,8 @@ ImplantMaterialID/
   Services/FakeEsapiPatientService.cs     <- canned data for UI development without Eclipse
   Services/LaunchArguments.cs             <- parses --patient/--structureset (see "Launching from Eclipse" below)
 ImplantMaterialID.EclipseLauncher/
-  ImplantMaterialID.EclipseLauncher.csproj
-  Script.cs                               <- Eclipse binary plugin that launches the exe above
+  ImplantMaterialID.EclipseLauncher.csproj  <- builds ImplantMaterialID.EclipseLauncher.esapi.dll - see below
+  Script.cs                                 <- Eclipse binary plugin that launches the exe above
 ```
 
 ## Threading model
@@ -150,10 +150,18 @@ practice: the launched exe re-authenticates and re-opens the patient itself via 
 the same Windows identity Eclipse already trusted.
 
 **Deployment.** Build both projects and copy `ImplantMaterialID.exe` (with its dependencies) and
-`ImplantMaterialID.EclipseLauncher.dll` to the same folder - the plugin looks for the exe next to
-itself by default. If your site deploys the exe somewhere else (e.g. a shared network path used
-by every workstation), point the plugin at it with the `IMPLANTMATERIALID_EXE_PATH` environment
-variable instead of keeping them side by side.
+`ImplantMaterialID.EclipseLauncher.esapi.dll` to the same folder - the plugin looks for the exe
+next to itself by default. If your site deploys the exe somewhere else (e.g. a shared network path
+used by every workstation), point the plugin at it with the `IMPLANTMATERIALID_EXE_PATH`
+environment variable instead of keeping them side by side.
+
+**Naming - this part is not optional.** Eclipse's script browser (*Tools > Scripts*) only
+recognises a compiled binary plugin whose filename ends in `.esapi.dll` - a plain `.dll` is
+silently omitted from the list, even when you browse to the correct folder, with no error
+telling you why. The `EclipseLauncher` project's `AssemblyName` is already set to build
+`ImplantMaterialID.EclipseLauncher.esapi.dll` for this reason; if the plugin doesn't show up in
+Eclipse, confirm the actual file on disk still ends in `.esapi.dll` (not just `.dll`) before
+looking anywhere else.
 
 **Approval.** This plugin is a separate compiled binary from the standalone exe, so it needs its
 own sign-off under *Eclipse > Tools > Script Approval* (or your site's equivalent) in addition to

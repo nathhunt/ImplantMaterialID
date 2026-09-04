@@ -11,7 +11,13 @@
     <PlatformTarget>x64</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
     <RootNamespace>ImplantMaterialID.EclipseLauncher</RootNamespace>
-    <AssemblyName>ImplantMaterialID.EclipseLauncher</AssemblyName>
+    <!-- Eclipse's script browser (Tools > Scripts) only recognises a compiled binary plugin if
+         its filename ends in ".esapi.dll" - a plain ".dll" is silently not listed, even when
+         browsing the correct folder. AssemblyName becomes the output filename (the SDK appends
+         ".dll" itself), so this must end in ".esapi", giving
+         ImplantMaterialID.EclipseLauncher.esapi.dll as the built output. Do not "clean up" this
+         name - it's a hard Eclipse requirement, not a naming preference. -->
+    <AssemblyName>ImplantMaterialID.EclipseLauncher.esapi</AssemblyName>
     <Nullable>disable</Nullable>
     <LangVersion>latest</LangVersion>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

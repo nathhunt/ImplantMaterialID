@@ -32,6 +32,11 @@ namespace VMS.TPS
     /// its own approval under Eclipse > Tools > Script Approval or the equivalent admin tool
     /// before Eclipse will run it - see the main README's deployment checklist. Approving the
     /// .exe does not also approve this DLL, or vice versa; they're separate binaries.
+    ///
+    /// DEPLOYMENT NOTE: Eclipse's script browser only recognises a compiled binary plugin whose
+    /// filename ends in ".esapi.dll" - a plain ".dll" is silently not listed, even in the right
+    /// folder. The .csproj's AssemblyName is set accordingly (builds
+    /// ImplantMaterialID.EclipseLauncher.esapi.dll) - don't rename that away.
     /// </summary>
     public class Script
     {
