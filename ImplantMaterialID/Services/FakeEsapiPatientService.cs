@@ -11,7 +11,7 @@ namespace ImplantMaterialID.Services
     /// Swap this in for StaEsapiPatientService in MainWindow.xaml.cs's composition root.
     ///
     /// This is NOT a substitute for validating the real voxel/HU logic in
-    /// EsapiPatientServiceCore - it hard-codes a plausible mean HU rather than computing one.
+    /// EsapiPatientServiceCore - it hard-codes plausible percentiles rather than computing them.
     /// There's no real threading concern here (no live ESAPI objects), so Task.Delay is used
     /// just to simulate realistic latency rather than for any correctness reason.
     /// </summary>
@@ -43,15 +43,19 @@ namespace ImplantMaterialID.Services
         {
             await Task.Delay(800); // the real voxel loop is the slow step - simulate that here too
 
-            // Canned numbers roughly matching a 10mm titanium rod at 550mm FOV, so the demo
-            // exercises the "Titanium, within tolerance" path end-to-end.
+            // Canned numbers from the 10 mm titanium rod, 1.073 mm pixels, 1500 HU threshold row
+            // of the phantom CSV - enter diameter 10 and threshold 1500 to exercise the
+            // "Titanium, both classifiers agree" path end-to-end.
             return new StructureStatistics
             {
-                MeanHu = 9500,
-                VoxelCount = 4200,
-                FovXMm = 550,
-                FovYMm = 550,
-                FovMm = 550
+                P70Hu = 8235,
+                P80Hu = 8402,
+                P90Hu = 8650,
+                VoxelCount = 296,
+                PixelSizeXMm = 1.073,
+                PixelSizeYMm = 1.073,
+                PixelSizeMm = 1.073,
+                FovMm = 549
             };
         }
 

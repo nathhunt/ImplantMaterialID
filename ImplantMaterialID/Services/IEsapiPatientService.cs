@@ -20,8 +20,8 @@ namespace ImplantMaterialID.Services
         Task<IReadOnlyList<StructureSummary>> GetStructuresAsync(string structureSetId);
 
         /// <summary>
-        /// Computes the mean HU of the named structure and the reconstruction FOV of the
-        /// associated CT.
+        /// Computes the P70/P80/P90 HU and voxel count of the named structure, and the pixel
+        /// size and reconstruction FOV of the associated CT.
         /// </summary>
         Task<StructureStatistics> ComputeStructureStatisticsAsync(string structureSetId, string structureId);
 

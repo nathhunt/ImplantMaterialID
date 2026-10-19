@@ -4,8 +4,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Implant Material Identifier" Height="640" Width="560"
-        MinHeight="560" MinWidth="480">
+        Title="Implant Material Identifier" Height="760" Width="620"
+        MinHeight="600" MinWidth="520">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
@@ -20,6 +20,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -27,14 +28,14 @@
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,12">
             <TextBlock Text="Implant Material Identifier" FontSize="18" FontWeight="Bold"/>
-            <TextBlock Text="Estimates whether a contoured metal implant is stainless steel or titanium, from its mean HU, diameter and scan FOV."
+            <TextBlock Text="Estimates whether a contoured metal rod is stainless steel or titanium from the upper percentiles (P70/P80/P90) of its HU, using two classifiers that must agree."
                        TextWrapping="Wrap" Foreground="#555" Margin="0,4,0,0"/>
         </StackPanel>
 
         <!-- Patient ID -->
         <Grid Grid.Row="1" Margin="0,0,0,4">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="140"/>
+                <ColumnDefinition Width="160"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
@@ -46,7 +47,7 @@
         <!-- Structure set -->
         <Grid Grid.Row="2" Margin="0,0,0,4">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="140"/>
+                <ColumnDefinition Width="160"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <Label Grid.Column="0" Content="Structure set"/>
@@ -58,7 +59,7 @@
         <!-- Structure -->
         <Grid Grid.Row="3" Margin="0,0,0,4">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="140"/>
+                <ColumnDefinition Width="160"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <Label Grid.Column="0" Content="Implant structure"/>
@@ -70,77 +71,104 @@
         <!-- Diameter -->
         <Grid Grid.Row="4" Margin="0,0,0,4">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="140"/>
+                <ColumnDefinition Width="160"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <Label Grid.Column="0" Content="Implant diameter (mm)"/>
             <TextBox Grid.Column="1" Text="{Binding DiameterMmText, UpdateSourceTrigger=PropertyChanged}"/>
         </Grid>
 
+        <!-- Threshold -->
+        <Grid Grid.Row="5" Margin="0,0,0,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="160"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Label Grid.Column="0" Content="Contour HU threshold"
+                   ToolTip="The HU threshold used to create the implant structure (calibrated for 1000-2000 HU)."/>
+            <TextBox Grid.Column="1" Text="{Binding ThresholdHuText, UpdateSourceTrigger=PropertyChanged}"/>
+        </Grid>
+
         <!-- Calculate -->
-        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,4,0,8">
+        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,4,0,8">
             <Button Content="Calculate" Command="{Binding CalculateCommand}"/>
         </StackPanel>
 
         <!-- Busy indicator -->
-        <ProgressBar Grid.Row="6" Height="4" IsIndeterminate="True"
+        <ProgressBar Grid.Row="7" Height="4" IsIndeterminate="True"
                      Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
                      Margin="0,0,0,8"/>
 
         <!-- Results -->
-        <Border Grid.Row="7" BorderBrush="#CCC" BorderThickness="1" Padding="12" VerticalAlignment="Top">
-            <StackPanel>
-                <TextBlock Text="Results" FontWeight="Bold" Margin="0,0,0,8"/>
+        <Border Grid.Row="8" BorderBrush="#CCC" BorderThickness="1" Padding="12">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="Results" FontWeight="Bold" Margin="0,0,0,8"/>
 
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="200"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Measured mean HU:"/>
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding MeanHu, StringFormat={}{0:0}}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Voxels in structure:"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Statistics.VoxelCount}"/>
 
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Scan FOV (mm):"/>
-                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding FovMm, StringFormat={}{0:0}}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Pixel size / FOV (mm):"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1">
+                            <Run Text="{Binding Statistics.PixelSizeMm, Mode=OneWay, StringFormat={}{0:0.###}}"/>
+                            <Run Text=" / "/>
+                            <Run Text="{Binding Statistics.FovMm, Mode=OneWay, StringFormat={}{0:0}}"/>
+                        </TextBlock>
 
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Expected HU - stainless steel:"/>
-                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Result.ExpectedStainlessSteelHu, StringFormat={}{0:0}}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="P70 / P80 / P90 (HU):"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1">
+                            <Run Text="{Binding Statistics.P70Hu, Mode=OneWay, StringFormat={}{0:0}}"/>
+                            <Run Text=" / "/>
+                            <Run Text="{Binding Statistics.P80Hu, Mode=OneWay, StringFormat={}{0:0}}"/>
+                            <Run Text=" / "/>
+                            <Run Text="{Binding Statistics.P90Hu, Mode=OneWay, StringFormat={}{0:0}}"/>
+                        </TextBlock>
 
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Expected HU - titanium:"/>
-                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Result.ExpectedTitaniumHu, StringFormat={}{0:0}}"/>
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Global classifier:" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Result.GlobalSummary}" TextWrapping="Wrap" Margin="0,8,0,0"/>
 
-                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Difference (SS / Ti):"/>
-                    <TextBlock Grid.Row="4" Grid.Column="1">
-                        <Run Text="{Binding Result.DifferenceFromStainlessSteel, StringFormat={}{0:0}}"/>
-                        <Run Text=" / "/>
-                        <Run Text="{Binding Result.DifferenceFromTitanium, StringFormat={}{0:0}}"/>
-                        <Run Text=" HU"/>
-                    </TextBlock>
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Matched lookup:" Margin="0,4,0,0"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Result.MatchedSummary}" TextWrapping="Wrap" Margin="0,4,0,0"/>
 
-                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Likely material:" FontWeight="Bold"/>
-                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Result.Summary}" FontWeight="Bold" TextWrapping="Wrap"/>
-                </Grid>
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Expected (SS / Ti):"/>
+                        <TextBlock Grid.Row="5" Grid.Column="1">
+                            <Run Text="{Binding Result.ExpectedStainlessSteelHu, Mode=OneWay, StringFormat={}{0:0}}"/>
+                            <Run Text=" / "/>
+                            <Run Text="{Binding Result.ExpectedTitaniumHu, Mode=OneWay, StringFormat={}{0:0}}"/>
+                            <Run Text=" HU"/>
+                        </TextBlock>
 
-                <ItemsControl ItemsSource="{Binding Result.Warnings}" Margin="0,10,0,0">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding}" TextWrapping="Wrap" Foreground="#B00020" Margin="0,2,0,2"/>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </StackPanel>
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="Likely material:" FontWeight="Bold" Margin="0,8,0,0"/>
+                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Result.Summary}" FontWeight="Bold" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                    </Grid>
+
+                    <ItemsControl ItemsSource="{Binding Result.Warnings}" Margin="0,10,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" TextWrapping="Wrap" Foreground="#B00020" Margin="0,2,0,2"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
         </Border>
 
         <!-- Status bar -->
-        <TextBlock Grid.Row="8" Text="{Binding StatusMessage}" TextWrapping="Wrap" Margin="0,10,0,0" Foreground="#333"/>
+        <TextBlock Grid.Row="9" Text="{Binding StatusMessage}" TextWrapping="Wrap" Margin="0,10,0,0" Foreground="#333"/>
     </Grid>
 </Window>

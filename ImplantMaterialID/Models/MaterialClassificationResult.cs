@@ -10,51 +10,91 @@ namespace ImplantMaterialID.Models
     }
 
     /// <summary>
-    /// Full output of comparing a measured mean HU against the interpolated
-    /// stainless steel and titanium reference curves for a given diameter/FOV.
+    /// Full output of the dual percentile classifier: a global cutoff on avg(P80, P90), and a
+    /// lookup of avg(P70, P80, P90) matched on diameter, pixel size and threshold.
     /// </summary>
     public class MaterialClassificationResult
     {
-        public double MeasuredMeanHu { get; set; }
-        public double DiameterMm { get; set; }
-        public double FovMm { get; set; }
+        // --- Inputs ----------------------------------------------------------
 
+        public double P70Hu { get; set; }
+        public double P80Hu { get; set; }
+        public double P90Hu { get; set; }
+        public long VoxelCount { get; set; }
+        public double DiameterMm { get; set; }
+        public double PixelSizeMm { get; set; }
+        public double ThresholdHu { get; set; }
+
+        // --- Classifier 1: global cutoff ---------------------------------------
+
+        /// <summary>avg(P80, P90) of the measured structure.</summary>
+        public double GlobalMetricHu { get; set; }
+        public double GlobalCutoffHu { get; set; }
+        public LikelyMaterial GlobalVerdict { get; set; }
+
+        /// <summary>How far the metric sits from the cutoff, as a percentage of the cutoff.</summary>
+        public double GlobalMarginPercent { get; set; }
+
+        // --- Classifier 2: matched lookup --------------------------------------
+
+        /// <summary>avg(P70, P80, P90) of the measured structure.</summary>
+        public double MatchedMetricHu { get; set; }
+
+        /// <summary>Interpolated avg(P70, P80, P90) expected for each material at this diameter/pixel size/threshold.</summary>
         public double ExpectedStainlessSteelHu { get; set; }
         public double ExpectedTitaniumHu { get; set; }
 
-        public double DifferenceFromStainlessSteel { get; set; }
-        public double DifferenceFromTitanium { get; set; }
-
-        /// <summary>The material whose interpolated HU is closer to the measured mean HU.</summary>
-        public LikelyMaterial BestMatch { get; set; }
-
-        /// <summary>The |measured - expected| difference for BestMatch.</summary>
-        public double BestMatchDifference { get; set; }
+        /// <summary>Geometric mean of the two expected values - the boundary on a ratio scale.</summary>
+        public double MatchedCutoffHu { get; set; }
+        public LikelyMaterial MatchedVerdict { get; set; }
 
         /// <summary>
-        /// True only if BestMatchDifference is within <see cref="AgreementToleranceHu"/> of the
-        /// table. If false, the identification should be treated as unreliable / indeterminate,
-        /// per the requirement that agreement with the table should be within 1000 HU.
+        /// Normalised log-ratio margin: 1 = measured value lands exactly on the chosen material's
+        /// expected value, 0 = on the decision boundary. Always non-negative here, since it is
+        /// measured towards whichever material was chosen.
         /// </summary>
-        public bool WithinTolerance { get; set; }
+        public double MatchedMargin { get; set; }
 
-        public double AgreementToleranceHu { get; set; }
+        // --- Combined decision ---------------------------------------------------
+
+        public bool ClassifiersAgree { get; set; }
+
+        /// <summary>The agreed material, or Indeterminate if the two classifiers disagree.</summary>
+        public LikelyMaterial FinalMaterial { get; set; }
+
+        /// <summary>True if the classifiers disagree, or any input is outside the calibrated range or flagged.</summary>
+        public bool NeedsReview => !ClassifiersAgree || Warnings.Count > 0;
 
         public List<string> Warnings { get; } = new List<string>();
+
+        public string GlobalSummary =>
+            $"avg(P80, P90) = {GlobalMetricHu:0} HU vs cutoff {GlobalCutoffHu:0} HU → {Display(GlobalVerdict)} " +
+            $"(margin {GlobalMarginPercent:0}%)";
+
+        public string MatchedSummary =>
+            $"avg(P70, P80, P90) = {MatchedMetricHu:0} HU vs boundary {MatchedCutoffHu:0} HU → {Display(MatchedVerdict)} " +
+            $"(margin {MatchedMargin:0.00})";
 
         public string Summary
         {
             get
             {
-                string material = BestMatch == LikelyMaterial.Indeterminate
-                    ? "Indeterminate"
-                    : BestMatch.ToString();
+                if (!ClassifiersAgree)
+                    return "Indeterminate - the two classifiers disagree. Review manually.";
 
-                string qualifier = WithinTolerance
-                    ? "within tolerance"
-                    : $"OUTSIDE the ±{AgreementToleranceHu:0} HU tolerance - review manually";
+                return NeedsReview
+                    ? $"{Display(FinalMaterial)} (both classifiers agree, but see warnings - review before relying on it)"
+                    : $"{Display(FinalMaterial)} (both classifiers agree)";
+            }
+        }
 
-                return $"Best match: {material} ({qualifier}, diff={BestMatchDifference:0} HU)";
+        public static string Display(LikelyMaterial material)
+        {
+            switch (material)
+            {
+                case LikelyMaterial.StainlessSteel: return "Stainless steel";
+                case LikelyMaterial.Titanium: return "Titanium";
+                default: return "Indeterminate";
             }
         }
     }

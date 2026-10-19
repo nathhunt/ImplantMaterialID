@@ -13,7 +13,7 @@ namespace ImplantMaterialID.Services
     /// class exists to prevent. This does NOT have to be the WPF UI thread (which is also STA,
     /// but a different thread) - it just has to be *a* single, consistent STA thread for the
     /// whole application's lifetime. Keeping ESAPI off the UI thread means the UI stays
-    /// responsive while a slow ESAPI call (e.g. the mean-HU voxel loop) is in flight, since the
+    /// responsive while a slow ESAPI call (e.g. the HU voxel loop) is in flight, since the
     /// two threads only ever exchange plain data (DTOs / exceptions), never live ESAPI objects.
     /// </summary>
     public sealed class EsapiStaThread : IDisposable
