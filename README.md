@@ -13,6 +13,26 @@ A stand-alone ESAPI WPF application (MVVM) that:
    only when they agree, flagging anything that needs manual review. See
    ["Classification method"](#classification-method) below.
 
+## What it looks like
+
+The answer is shown as a colour-coded card: **green** when both checks agree, **amber** when
+they agree but something was flagged (shown on the card), and **red** when they disagree and
+no material is reported.
+
+| Both checks agree | Result flagged | Checks disagree |
+|---|---|---|
+| ![Titanium result, both checks agree](docs/images/ui_result_titanium.png) | ![Stainless steel result flagged for a small contour](docs/images/ui_result_flagged.png) | ![Unable to determine, the two checks disagree](docs/images/ui_result_disagree.png) |
+
+The numbers behind the result are in the collapsible **Detailed breakdown**:
+
+<img src="docs/images/ui_detailed_breakdown.png" alt="Detailed breakdown expanded" width="520">
+
+These are renderings of the window layout, not screenshots taken on Windows, so fonts and
+control styling differ slightly from the real app. The green and amber examples use rows from
+the phantom data (10 mm Ti at 1.073 mm pixels / 1500 HU; 4 mm SS at 1.367 mm pixels /
+1000 HU). The red example uses made-up percentiles, since no phantom case makes the checks
+disagree.
+
 ## Project layout
 
 ```
@@ -32,6 +52,7 @@ ImplantMaterialID/
 calibration/
   Combined_HU_percentiles.csv             <- phantom HU percentiles (source of truth for the reference tables)
   generate_reference_data.py              <- regenerates Models/PercentileReferenceData.cs from the CSV
+docs/images/                              <- UI images used in this README
 ImplantMaterialID.EclipseLauncher/
   ImplantMaterialID.EclipseLauncher.csproj  <- builds ImplantMaterialID.EclipseLauncher.esapi.dll - see below
   Script.cs                                 <- Eclipse binary plugin that launches the exe above
