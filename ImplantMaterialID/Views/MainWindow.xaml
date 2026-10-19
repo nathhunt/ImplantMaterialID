@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Implant Material Identifier" Height="820" Width="640"
+        Title="Implant Material Identifier" Height="820" Width="660"
         MinHeight="620" MinWidth="540">
 
     <Window.Resources>
@@ -97,7 +97,7 @@
         <!-- Inputs -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="170"/>
+                <ColumnDefinition Width="200"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
@@ -184,12 +184,12 @@
 
                         <!-- Technical breakdown -->
                         <Expander Header="Detailed breakdown (for physicists)" Margin="0,12,0,0">
-                            <StackPanel Margin="4,6,0,0">
+                            <StackPanel Margin="4,6,0,0" Grid.IsSharedSizeScope="True">
 
                                 <TextBlock Text="Measured from the contour" Style="{StaticResource SectionHeader}"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="DetailLabel"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
@@ -233,7 +233,7 @@
                                 <TextBlock Text="Check 1 - global cutoff (no lookup)" Style="{StaticResource SectionHeader}"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="DetailLabel"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
@@ -262,7 +262,7 @@
                                 <TextBlock Text="Check 2 - lookup matched on diameter, pixel size and threshold" Style="{StaticResource SectionHeader}"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="DetailLabel"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
