@@ -74,7 +74,7 @@ namespace ImplantMaterialID.Models
         /// <summary>The agreed material, or Indeterminate if the two classifiers disagree.</summary>
         public LikelyMaterial FinalMaterial { get; set; }
 
-        /// <summary>Reasons the result was flagged for review, shown in the detailed breakdown.</summary>
+        /// <summary>Reasons the result was flagged, shown on the result card.</summary>
         public List<string> Warnings { get; } = new List<string>();
 
         public bool HasWarnings => Warnings.Count > 0;
@@ -97,7 +97,7 @@ namespace ImplantMaterialID.Models
                 switch (Confidence)
                 {
                     case ResultConfidence.High: return "Both checks agree";
-                    case ResultConfidence.ReviewRecommended: return "Both checks agree - review recommended";
+                    case ResultConfidence.ReviewRecommended: return "Both checks agree - result flagged";
                     default: return "The two checks disagree";
                 }
             }
@@ -110,13 +110,13 @@ namespace ImplantMaterialID.Models
                 switch (Confidence)
                 {
                     case ResultConfidence.High:
-                        return $"The implant's brightness on the CT matches {Display(FinalMaterial).ToLowerInvariant()}, " +
+                        return $"The implant's HU matches {Display(FinalMaterial).ToLowerInvariant()}, " +
                                "and both independent checks give the same answer.";
                     case ResultConfidence.ReviewRecommended:
                         return $"Both checks point to {Display(FinalMaterial).ToLowerInvariant()}, but the result is less " +
-                               "certain than usual. Consult a physicist before relying on it.";
+                               "certain than usual.";
                     default:
-                        return "The two checks gave different answers, so no material can be reported. Consult a physicist.";
+                        return "The two checks gave different answers, so no material can be reported.";
                 }
             }
         }

@@ -90,7 +90,7 @@
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,12">
             <TextBlock Text="Implant Material Identifier" FontSize="18" FontWeight="Bold"/>
-            <TextBlock Text="Estimates whether a metal rod seen on CT is stainless steel or titanium, from how bright it appears on the scan."
+            <TextBlock Text="Estimates whether a metal rod seen on CT is stainless steel or titanium, from its HU values on the CT."
                        TextWrapping="Wrap" Foreground="#555" Margin="0,4,0,0"/>
         </StackPanel>
 
@@ -162,15 +162,8 @@
                                 <TextBlock Text="{Binding Result.Headline}" FontSize="26" FontWeight="Bold" Margin="0,2,0,2"/>
                                 <TextBlock Text="{Binding Result.ConfidenceLabel}" FontWeight="SemiBold" Margin="0,0,0,6"/>
                                 <TextBlock Text="{Binding Result.Explanation}" TextWrapping="Wrap"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Technical breakdown -->
-                        <Expander Header="Detailed breakdown" Margin="0,12,0,0">
-                            <StackPanel Margin="4,6,0,0" Grid.IsSharedSizeScope="True">
-
-                                <StackPanel Visibility="{Binding Result.HasWarnings, Converter={StaticResource BoolToVis}}">
-                                    <TextBlock Text="Why this result was flagged" Style="{StaticResource SectionHeader}"/>
+                                <StackPanel Visibility="{Binding Result.HasWarnings, Converter={StaticResource BoolToVis}}" Margin="0,8,0,0">
+                                    <TextBlock Text="Why this result was flagged" FontWeight="Bold" Margin="0,0,0,2"/>
                                     <ItemsControl ItemsSource="{Binding Result.Warnings}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
@@ -184,6 +177,13 @@
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
                                 </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Technical breakdown -->
+                        <Expander Header="Detailed breakdown" Margin="0,12,0,0">
+                            <StackPanel Margin="4,6,0,0" Grid.IsSharedSizeScope="True">
+
 
                                 <TextBlock Text="Measured from the contour" Style="{StaticResource SectionHeader}"/>
                                 <Grid>
