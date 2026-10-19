@@ -21,7 +21,7 @@ namespace ImplantMaterialID.Services
     /// between versions and must be checked against your own "Eclipse Scripting API Reference
     /// Guide" before clinical use - see README "Validating version-specific ESAPI behaviour":
     /// Patient.StructureSets (GetAllStructureSets below), the Image.GetVoxels buffer index
-    /// order (ComputeMeanHu below), and the axis-aligned assumption ComputeMeanHu's containment
+    /// order (CollectHuValues below), and the axis-aligned assumption CollectHuValues' containment
     /// test makes (see that method's remarks).
     /// </summary>
     internal sealed class EsapiPatientServiceCore : IDisposable
@@ -93,14 +93,18 @@ namespace ImplantMaterialID.Services
             double fovX = image.XRes * image.XSize;
             double fovY = image.YRes * image.YSize;
 
-            var (meanHu, voxelCount) = ComputeMeanHu(structure, image);
+            var huValues = CollectHuValues(structure, image);
+            huValues.Sort();
 
             return new StructureStatistics
             {
-                MeanHu = meanHu,
-                VoxelCount = voxelCount,
-                FovXMm = fovX,
-                FovYMm = fovY,
+                P70Hu = Percentile.Linear(huValues, 0.70),
+                P80Hu = Percentile.Linear(huValues, 0.80),
+                P90Hu = Percentile.Linear(huValues, 0.90),
+                VoxelCount = huValues.Count,
+                PixelSizeXMm = image.XRes,
+                PixelSizeYMm = image.YRes,
+                PixelSizeMm = (image.XRes + image.YRes) / 2.0,
                 FovMm = (fovX + fovY) / 2.0
             };
         }
@@ -154,13 +158,17 @@ namespace ImplantMaterialID.Services
         }
 
         /// <summary>
-        /// Computes the mean HU of a structure by iterating CT voxels slice-by-slice, restricted
+        /// Collects the HU of every CT voxel inside a structure, iterating slice-by-slice, restricted
         /// to the structure's contour bounding box on each slice for performance, and testing
         /// containment with an in-process scanline (ray-casting) point-in-polygon test
         /// (https://en.wikipedia.org/wiki/Point_in_polygon) against the structure's own contour
         /// points, rather than calling the ESAPI/COM Structure.IsPointInsideSegment per pixel.
         /// Multiple contours on one slice (e.g. a structure with a hole) combine correctly under
         /// the even-odd rule used here, matching how DICOM RT contours are defined.
+        ///
+        /// Every value is kept, not just a running sum, because percentiles need the full
+        /// distribution. That is cheap even for long clinical implants: a 300 mm long, 16 mm
+        /// diameter rod at 0.62 mm pixels and 2 mm slices is ~77,000 voxels (~0.6 MB of doubles).
         ///
         /// Raw voxel values are converted to HU via Image.VoxelToDisplayValue, which applies the
         /// CT's own calibration curve - this is what allows the extended/metal HU range used in
@@ -175,10 +183,9 @@ namespace ImplantMaterialID.Services
         /// (no gantry/couch tilt baked into the acquisition). Validate against known geometry
         /// (see class remarks) before clinical use.
         /// </summary>
-        private static (double meanHu, long voxelCount) ComputeMeanHu(Structure structure, VMS.TPS.Common.Model.API.Image image)
+        private static List<double> CollectHuValues(Structure structure, VMS.TPS.Common.Model.API.Image image)
         {
-            double sum = 0;
-            long count = 0;
+            var huValues = new List<double>();
 
             double xRes = image.XRes;
             double yRes = image.YRes;
@@ -245,7 +252,7 @@ namespace ImplantMaterialID.Services
                     continue;
 
                 // Verify this buffer's index order against your ESAPI version (class remarks).
-                // If mean HU comes out obviously wrong (e.g. background air values for a
+                // If the HU percentiles come out obviously wrong (e.g. background air values for a
                 // structure you know is metal), swap the indices used to read `buffer` below.
                 image.GetVoxels(z, buffer);
 
@@ -292,20 +299,18 @@ namespace ImplantMaterialID.Services
                         for (int i = iStart; i <= iEnd; i++)
                         {
                             int rawVoxel = buffer[i, j];
-                            double hu = image.VoxelToDisplayValue(rawVoxel);
-                            sum += hu;
-                            count++;
+                            huValues.Add(image.VoxelToDisplayValue(rawVoxel));
                         }
                     }
                 }
             }
 
-            if (count == 0)
+            if (huValues.Count == 0)
                 throw new InvalidOperationException(
                     "No voxels were found inside the selected structure - check that it is contoured " +
                     "on this image set and that it encloses a non-zero volume.");
 
-            return (sum / count, count);
+            return huValues;
         }
     }
 }

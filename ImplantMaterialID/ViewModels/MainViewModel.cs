@@ -17,7 +17,7 @@ namespace ImplantMaterialID.ViewModels
             _esapiService = esapiService ?? throw new ArgumentNullException(nameof(esapiService));
 
             LoadPatientCommand = new RelayCommand(async () => await LoadPatientAsync(), () => !IsBusy && !string.IsNullOrWhiteSpace(PatientId));
-            CalculateCommand = new RelayCommand(async () => await CalculateAsync(), () => !IsBusy && SelectedStructure != null && !string.IsNullOrWhiteSpace(DiameterMmText));
+            CalculateCommand = new RelayCommand(async () => await CalculateAsync(), () => !IsBusy && SelectedStructure != null && !string.IsNullOrWhiteSpace(DiameterMmText) && !string.IsNullOrWhiteSpace(ThresholdHuText));
         }
 
         // --- Patient / structure selection -------------------------------
@@ -73,20 +73,22 @@ namespace ImplantMaterialID.ViewModels
             set { if (SetProperty(ref _diameterMmText, value)) CalculateCommand.RaiseCanExecuteChanged(); }
         }
 
-        // --- Calculation outputs ------------------------------------------
+        // --- User-entered HU threshold used to create the implant structure ---
 
-        private double? _meanHu;
-        public double? MeanHu
+        private string _thresholdHuText;
+        public string ThresholdHuText
         {
-            get => _meanHu;
-            private set => SetProperty(ref _meanHu, value);
+            get => _thresholdHuText;
+            set { if (SetProperty(ref _thresholdHuText, value)) CalculateCommand.RaiseCanExecuteChanged(); }
         }
 
-        private double? _fovMm;
-        public double? FovMm
+        // --- Calculation outputs ------------------------------------------
+
+        private StructureStatistics _statistics;
+        public StructureStatistics Statistics
         {
-            get => _fovMm;
-            private set => SetProperty(ref _fovMm, value);
+            get => _statistics;
+            private set => SetProperty(ref _statistics, value);
         }
 
         private MaterialClassificationResult _result;
@@ -245,8 +247,14 @@ namespace ImplantMaterialID.ViewModels
                 return;
             }
 
+            if (!double.TryParse(ThresholdHuText, NumberStyles.Float, CultureInfo.InvariantCulture, out double thresholdHu))
+            {
+                StatusMessage = "Enter the HU threshold used to create the implant structure (e.g. 1500).";
+                return;
+            }
+
             IsBusy = true;
-            StatusMessage = "Calculating mean HU (this can take a few seconds)...";
+            StatusMessage = "Calculating HU percentiles (this can take a few seconds)...";
             ResetCalculationOutputs();
 
             try
@@ -256,13 +264,13 @@ namespace ImplantMaterialID.ViewModels
 
                 var stats = await _esapiService.ComputeStructureStatisticsAsync(structureSetId, structureId);
 
-                MeanHu = stats.MeanHu;
-                FovMm = stats.FovMm;
+                Statistics = stats;
 
-                Result = ImplantMaterialClassifier.Classify(stats.MeanHu, diameterMm, stats.FovMm);
+                Result = ImplantMaterialClassifier.Classify(
+                    stats.P70Hu, stats.P80Hu, stats.P90Hu, stats.VoxelCount, diameterMm, stats.PixelSizeMm, thresholdHu);
 
-                StatusMessage = Math.Abs(stats.FovXMm - stats.FovYMm) > 1.0
-                    ? $"Done. Note: scan FOV is non-square (X={stats.FovXMm:0} mm, Y={stats.FovYMm:0} mm) - averaged for lookup."
+                StatusMessage = Math.Abs(stats.PixelSizeXMm - stats.PixelSizeYMm) > 0.001
+                    ? $"Done. Note: pixels are non-square (X={stats.PixelSizeXMm:0.###} mm, Y={stats.PixelSizeYMm:0.###} mm) - averaged for lookup."
                     : "Done.";
             }
             catch (Exception ex)
@@ -277,8 +285,7 @@ namespace ImplantMaterialID.ViewModels
 
         private void ResetCalculationOutputs()
         {
-            MeanHu = null;
-            FovMm = null;
+            Statistics = null;
             Result = null;
         }
 

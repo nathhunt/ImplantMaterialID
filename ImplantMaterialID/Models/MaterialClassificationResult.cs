@@ -9,52 +9,128 @@ namespace ImplantMaterialID.Models
         Indeterminate
     }
 
+    public enum ResultConfidence
+    {
+        /// <summary>Both checks agree and nothing was flagged.</summary>
+        High,
+
+        /// <summary>Both checks agree, but something was flagged (out of range, small structure).</summary>
+        ReviewRecommended,
+
+        /// <summary>The two checks disagree - no material is reported.</summary>
+        Inconclusive
+    }
+
     /// <summary>
-    /// Full output of comparing a measured mean HU against the interpolated
-    /// stainless steel and titanium reference curves for a given diameter/FOV.
+    /// Full output of the dual percentile classifier: a global cutoff on avg(P80, P90), and a
+    /// lookup of avg(P70, P80, P90) matched on diameter, pixel size and threshold.
     /// </summary>
     public class MaterialClassificationResult
     {
-        public double MeasuredMeanHu { get; set; }
-        public double DiameterMm { get; set; }
-        public double FovMm { get; set; }
+        // --- Inputs ----------------------------------------------------------
 
+        public double P70Hu { get; set; }
+        public double P80Hu { get; set; }
+        public double P90Hu { get; set; }
+        public long VoxelCount { get; set; }
+        public double DiameterMm { get; set; }
+        public double PixelSizeMm { get; set; }
+        public double ThresholdHu { get; set; }
+
+        // --- Classifier 1: global cutoff ---------------------------------------
+
+        /// <summary>avg(P80, P90) of the measured structure.</summary>
+        public double GlobalMetricHu { get; set; }
+        public double GlobalCutoffHu { get; set; }
+        public LikelyMaterial GlobalVerdict { get; set; }
+
+        /// <summary>How far the metric sits from the cutoff, as a percentage of the cutoff.</summary>
+        public double GlobalMarginPercent { get; set; }
+
+        // --- Classifier 2: matched lookup --------------------------------------
+
+        /// <summary>avg(P70, P80, P90) of the measured structure.</summary>
+        public double MatchedMetricHu { get; set; }
+
+        /// <summary>Interpolated avg(P70, P80, P90) expected for each material at this diameter/pixel size/threshold.</summary>
         public double ExpectedStainlessSteelHu { get; set; }
         public double ExpectedTitaniumHu { get; set; }
 
-        public double DifferenceFromStainlessSteel { get; set; }
-        public double DifferenceFromTitanium { get; set; }
-
-        /// <summary>The material whose interpolated HU is closer to the measured mean HU.</summary>
-        public LikelyMaterial BestMatch { get; set; }
-
-        /// <summary>The |measured - expected| difference for BestMatch.</summary>
-        public double BestMatchDifference { get; set; }
+        /// <summary>Geometric mean of the two expected values - the boundary on a ratio scale.</summary>
+        public double MatchedCutoffHu { get; set; }
+        public LikelyMaterial MatchedVerdict { get; set; }
 
         /// <summary>
-        /// True only if BestMatchDifference is within <see cref="AgreementToleranceHu"/> of the
-        /// table. If false, the identification should be treated as unreliable / indeterminate,
-        /// per the requirement that agreement with the table should be within 1000 HU.
+        /// Normalised log-ratio margin: 1 = measured value lands exactly on the chosen material's
+        /// expected value, 0 = on the decision boundary. Always non-negative here, since it is
+        /// measured towards whichever material was chosen.
         /// </summary>
-        public bool WithinTolerance { get; set; }
+        public double MatchedMargin { get; set; }
 
-        public double AgreementToleranceHu { get; set; }
+        // --- Combined decision ---------------------------------------------------
 
+        public bool ClassifiersAgree { get; set; }
+
+        /// <summary>The agreed material, or Indeterminate if the two classifiers disagree.</summary>
+        public LikelyMaterial FinalMaterial { get; set; }
+
+        /// <summary>Reasons the result was flagged, shown on the result card.</summary>
         public List<string> Warnings { get; } = new List<string>();
 
-        public string Summary
+        public bool HasWarnings => Warnings.Count > 0;
+
+        // --- Plain-language presentation ------------------------------------------
+
+        public ResultConfidence Confidence =>
+            !ClassifiersAgree ? ResultConfidence.Inconclusive
+            : Warnings.Count > 0 ? ResultConfidence.ReviewRecommended
+            : ResultConfidence.High;
+
+        /// <summary>The one-line answer, e.g. "Titanium" or "Unable to determine".</summary>
+        public string Headline =>
+            FinalMaterial == LikelyMaterial.Indeterminate ? "Unable to determine" : Display(FinalMaterial);
+
+        public string ConfidenceLabel
         {
             get
             {
-                string material = BestMatch == LikelyMaterial.Indeterminate
-                    ? "Indeterminate"
-                    : BestMatch.ToString();
+                switch (Confidence)
+                {
+                    case ResultConfidence.High: return "Both checks agree";
+                    case ResultConfidence.ReviewRecommended: return "Both checks agree - result flagged";
+                    default: return "The two checks disagree";
+                }
+            }
+        }
 
-                string qualifier = WithinTolerance
-                    ? "within tolerance"
-                    : $"OUTSIDE the ±{AgreementToleranceHu:0} HU tolerance - review manually";
+        public string Explanation
+        {
+            get
+            {
+                switch (Confidence)
+                {
+                    case ResultConfidence.High:
+                        return $"The implant's HU matches {Display(FinalMaterial).ToLowerInvariant()}, " +
+                               "and both independent checks give the same answer.";
+                    case ResultConfidence.ReviewRecommended:
+                        return $"Both checks point to {Display(FinalMaterial).ToLowerInvariant()}, but the result is less " +
+                               "certain than usual.";
+                    default:
+                        return "The two checks gave different answers, so no material can be reported.";
+                }
+            }
+        }
 
-                return $"Best match: {material} ({qualifier}, diff={BestMatchDifference:0} HU)";
+        public string GlobalVerdictText => Display(GlobalVerdict);
+        public string MatchedVerdictText => Display(MatchedVerdict);
+
+        public static string Display(LikelyMaterial material)
+        {
+            switch (material)
+            {
+                case LikelyMaterial.StainlessSteel: return "Stainless steel";
+                case LikelyMaterial.Titanium: return "Titanium";
+                default: return "Indeterminate";
             }
         }
     }
