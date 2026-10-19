@@ -183,7 +183,7 @@
                         </StackPanel>
 
                         <!-- Technical breakdown -->
-                        <Expander Header="Detailed breakdown (for physicists)" Margin="0,12,0,0">
+                        <Expander Header="Detailed breakdown" Margin="0,12,0,0">
                             <StackPanel Margin="4,6,0,0" Grid.IsSharedSizeScope="True">
 
                                 <TextBlock Text="Measured from the contour" Style="{StaticResource SectionHeader}"/>
