@@ -9,6 +9,18 @@ namespace ImplantMaterialID.Models
         Indeterminate
     }
 
+    public enum ResultConfidence
+    {
+        /// <summary>Both checks agree and nothing was flagged.</summary>
+        High,
+
+        /// <summary>Both checks agree, but something was flagged (out of range, small structure).</summary>
+        ReviewRecommended,
+
+        /// <summary>The two checks disagree - no material is reported.</summary>
+        Inconclusive
+    }
+
     /// <summary>
     /// Full output of the dual percentile classifier: a global cutoff on avg(P80, P90), and a
     /// lookup of avg(P70, P80, P90) matched on diameter, pixel size and threshold.
@@ -62,31 +74,56 @@ namespace ImplantMaterialID.Models
         /// <summary>The agreed material, or Indeterminate if the two classifiers disagree.</summary>
         public LikelyMaterial FinalMaterial { get; set; }
 
-        /// <summary>True if the classifiers disagree, or any input is outside the calibrated range or flagged.</summary>
-        public bool NeedsReview => !ClassifiersAgree || Warnings.Count > 0;
-
+        /// <summary>Plain-language notes on anything that makes the result less certain.</summary>
         public List<string> Warnings { get; } = new List<string>();
 
-        public string GlobalSummary =>
-            $"avg(P80, P90) = {GlobalMetricHu:0} HU vs cutoff {GlobalCutoffHu:0} HU → {Display(GlobalVerdict)} " +
-            $"(margin {GlobalMarginPercent:0}%)";
+        public bool HasWarnings => Warnings.Count > 0;
 
-        public string MatchedSummary =>
-            $"avg(P70, P80, P90) = {MatchedMetricHu:0} HU vs boundary {MatchedCutoffHu:0} HU → {Display(MatchedVerdict)} " +
-            $"(margin {MatchedMargin:0.00})";
+        // --- Plain-language presentation ------------------------------------------
 
-        public string Summary
+        public ResultConfidence Confidence =>
+            !ClassifiersAgree ? ResultConfidence.Inconclusive
+            : Warnings.Count > 0 ? ResultConfidence.ReviewRecommended
+            : ResultConfidence.High;
+
+        /// <summary>The one-line answer, e.g. "Titanium" or "Unable to determine".</summary>
+        public string Headline =>
+            FinalMaterial == LikelyMaterial.Indeterminate ? "Unable to determine" : Display(FinalMaterial);
+
+        public string ConfidenceLabel
         {
             get
             {
-                if (!ClassifiersAgree)
-                    return "Indeterminate - the two classifiers disagree. Review manually.";
-
-                return NeedsReview
-                    ? $"{Display(FinalMaterial)} (both classifiers agree, but see warnings - review before relying on it)"
-                    : $"{Display(FinalMaterial)} (both classifiers agree)";
+                switch (Confidence)
+                {
+                    case ResultConfidence.High: return "Both checks agree";
+                    case ResultConfidence.ReviewRecommended: return "Both checks agree - review recommended";
+                    default: return "The two checks disagree";
+                }
             }
         }
+
+        public string Explanation
+        {
+            get
+            {
+                switch (Confidence)
+                {
+                    case ResultConfidence.High:
+                        return $"The implant's brightness on the CT matches {Display(FinalMaterial).ToLowerInvariant()}, " +
+                               "and both independent checks give the same answer.";
+                    case ResultConfidence.ReviewRecommended:
+                        return $"Both checks point to {Display(FinalMaterial).ToLowerInvariant()}, but the points below make " +
+                               "the result less certain. Have a physicist confirm it before relying on it.";
+                    default:
+                        return "One check suggests stainless steel and the other titanium, so no material is reported. " +
+                               "Check the points below, then ask a physicist to review.";
+                }
+            }
+        }
+
+        public string GlobalVerdictText => Display(GlobalVerdict);
+        public string MatchedVerdictText => Display(MatchedVerdict);
 
         public static string Display(LikelyMaterial material)
         {

@@ -92,21 +92,21 @@ namespace ImplantMaterialID.Models
             if (!result.ClassifiersAgree)
             {
                 result.Warnings.Add(
-                    $"The global classifier says {MaterialClassificationResult.Display(result.GlobalVerdict)} but the matched " +
-                    $"lookup says {MaterialClassificationResult.Display(result.MatchedVerdict)}. Check contour quality, metal " +
-                    "artefact, the diameter/threshold entered, and whether the implant is a material other than these two.");
+                    "Check that the diameter and contouring threshold entered are correct, that the contour covers only " +
+                    "the implant, and that there is no heavy streak artefact through it. The implant may also be a metal " +
+                    "other than stainless steel or titanium (e.g. cobalt-chrome).");
             }
 
             if (voxelCount < LowVoxelCountWarning)
             {
                 result.Warnings.Add(
-                    $"Only {voxelCount} voxels in the structure - the upper percentiles rest on very few values and are " +
-                    "sensitive to noise and streaks. Treat the result as lower confidence.");
+                    $"The contour is very small ({voxelCount} voxels), so the measurement is based on only a few points " +
+                    "and is more easily affected by image noise.");
             }
 
-            AddClampWarning(result, ss70.XClamped, "Diameter", $"{diameterMm:0.#} mm", PercentileReferenceData.DiametersMm, "0", "mm");
-            AddClampWarning(result, ss70.YClamped, "Pixel size", $"{pixelSizeMm:0.###} mm", PercentileReferenceData.PixelSizesMm, "0.###", "mm");
-            AddClampWarning(result, ss70.ZClamped, "HU threshold", $"{thresholdHu:0} HU", PercentileReferenceData.ThresholdsHu, "0", "HU");
+            AddClampWarning(result, ss70.XClamped, "implant diameter entered", $"{diameterMm:0.#} mm", PercentileReferenceData.DiametersMm, "0", "mm");
+            AddClampWarning(result, ss70.YClamped, "CT pixel size", $"{pixelSizeMm:0.###} mm", PercentileReferenceData.PixelSizesMm, "0.###", "mm");
+            AddClampWarning(result, ss70.ZClamped, "contouring threshold entered", $"{thresholdHu:0} HU", PercentileReferenceData.ThresholdsHu, "0", "HU");
 
             return result;
         }
@@ -122,8 +122,8 @@ namespace ImplantMaterialID.Models
                 return;
 
             result.Warnings.Add(
-                $"{name} ({value}) is outside the calibrated range ({axis[0].ToString(format)}-{axis[axis.Length - 1].ToString(format)} {unit}) " +
-                "and was clamped to the nearest edge for the matched lookup. Treat the result with extra caution.");
+                $"The {name} ({value}) is outside the range this tool was calibrated for " +
+                $"({axis[0].ToString(format)}-{axis[axis.Length - 1].ToString(format)} {unit}), so the nearest calibrated value was used.");
         }
     }
 }
