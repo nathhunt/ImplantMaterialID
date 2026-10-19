@@ -74,7 +74,7 @@ namespace ImplantMaterialID.Models
         /// <summary>The agreed material, or Indeterminate if the two classifiers disagree.</summary>
         public LikelyMaterial FinalMaterial { get; set; }
 
-        /// <summary>Plain-language notes on anything that makes the result less certain.</summary>
+        /// <summary>Reasons the result was flagged for review, shown in the detailed breakdown.</summary>
         public List<string> Warnings { get; } = new List<string>();
 
         public bool HasWarnings => Warnings.Count > 0;
@@ -113,11 +113,10 @@ namespace ImplantMaterialID.Models
                         return $"The implant's brightness on the CT matches {Display(FinalMaterial).ToLowerInvariant()}, " +
                                "and both independent checks give the same answer.";
                     case ResultConfidence.ReviewRecommended:
-                        return $"Both checks point to {Display(FinalMaterial).ToLowerInvariant()}, but the points below make " +
-                               "the result less certain. Have a physicist confirm it before relying on it.";
+                        return $"Both checks point to {Display(FinalMaterial).ToLowerInvariant()}, but the result is less " +
+                               "certain than usual. Consult a physicist before relying on it.";
                     default:
-                        return "One check suggests stainless steel and the other titanium, so no material is reported. " +
-                               "Check the points below, then ask a physicist to review.";
+                        return "The two checks gave different answers, so no material can be reported. Consult a physicist.";
                 }
             }
         }

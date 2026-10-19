@@ -165,26 +165,25 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Things to check -->
-                        <StackPanel Visibility="{Binding Result.HasWarnings, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="Please check" Style="{StaticResource SectionHeader}"/>
-                            <ItemsControl ItemsSource="{Binding Result.Warnings}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <BulletDecorator Margin="0,2,0,2">
-                                            <BulletDecorator.Bullet>
-                                                <TextBlock Text="•" Margin="0,0,6,0"/>
-                                            </BulletDecorator.Bullet>
-                                            <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
-                                        </BulletDecorator>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-
                         <!-- Technical breakdown -->
                         <Expander Header="Detailed breakdown" Margin="0,12,0,0">
                             <StackPanel Margin="4,6,0,0" Grid.IsSharedSizeScope="True">
+
+                                <StackPanel Visibility="{Binding Result.HasWarnings, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="Why this result was flagged" Style="{StaticResource SectionHeader}"/>
+                                    <ItemsControl ItemsSource="{Binding Result.Warnings}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <BulletDecorator Margin="0,2,0,2">
+                                                    <BulletDecorator.Bullet>
+                                                        <TextBlock Text="•" Margin="0,0,6,0"/>
+                                                    </BulletDecorator.Bullet>
+                                                    <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
+                                                </BulletDecorator>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
 
                                 <TextBlock Text="Measured from the contour" Style="{StaticResource SectionHeader}"/>
                                 <Grid>

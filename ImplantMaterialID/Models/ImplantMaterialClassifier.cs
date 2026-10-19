@@ -92,9 +92,10 @@ namespace ImplantMaterialID.Models
             if (!result.ClassifiersAgree)
             {
                 result.Warnings.Add(
-                    "Check that the diameter and contouring threshold entered are correct, that the contour covers only " +
-                    "the implant, and that there is no heavy streak artefact through it. The implant may also be a metal " +
-                    "other than stainless steel or titanium (e.g. cobalt-chrome).");
+                    $"Check 1 says {MaterialClassificationResult.Display(result.GlobalVerdict)} but Check 2 says " +
+                    $"{MaterialClassificationResult.Display(result.MatchedVerdict)}. Possible causes: wrong diameter or " +
+                    "threshold entered, contour including non-implant voxels, heavy streak artefact, or a material not in " +
+                    "the reference data.");
             }
 
             if (voxelCount < LowVoxelCountWarning)
