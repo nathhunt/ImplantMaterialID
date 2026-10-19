@@ -128,12 +128,12 @@
             <Label Grid.Row="3" Grid.Column="0" Content="4. Rod diameter (mm)"/>
             <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding DiameterMmText, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,0"/>
             <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Style="{StaticResource Hint}"
-                       Text="From the implant record or measured on the CT, e.g. 6. Calibrated for 4-16 mm."/>
+                       Text="4-16 mm"/>
 
             <Label Grid.Row="5" Grid.Column="0" Content="5. Contouring threshold (HU)"/>
             <TextBox Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding ThresholdHuText, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,0"/>
             <TextBlock Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2" Style="{StaticResource Hint}"
-                       Text="The HU value used to auto-contour the implant, e.g. 1500. Calibrated for 1000-2000 HU."/>
+                       Text="1000-2000 HU"/>
         </Grid>
 
         <!-- Calculate -->
