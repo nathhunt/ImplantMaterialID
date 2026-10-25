@@ -128,6 +128,24 @@ a `BadImageFormatException`.
 If Visual Studio prompts about missing binding redirects the first time you build against
 the real DLLs, let it auto-generate them into `App.config`.
 
+### Building and debugging in VS Code
+
+The repo includes a `.vscode/` folder for VS Code with the
+[C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit)
+extension (VS Code will offer to install it when you open the folder):
+
+- **Prerequisites** (Windows only, since WPF and ESAPI are Windows-only): the
+  [.NET SDK](https://dotnet.microsoft.com/download) (any current version - it's only used as the
+  build tool; the app still targets .NET Framework 4.8) and the ESAPI install described above.
+  The .NET Framework 4.8 reference assemblies come from the
+  `Microsoft.NETFramework.ReferenceAssemblies` NuGet package, so the Developer Pack isn't needed.
+- **Build:** `Ctrl+Shift+B` runs `dotnet build ImplantMaterialID.sln -c Debug -p:Platform=x64`.
+  From a terminal, always pass `-p:Platform=x64` - the projects only define an x64 platform.
+- **Debug:** `F5` builds and launches `ImplantMaterialID.exe` under the .NET Framework (`clr`)
+  debugger. *ImplantMaterialID (with patient)* prompts for a patient and structure set ID and
+  passes them as `--patient`/`--structureset`, the way the Eclipse plugin does. To debug the
+  plugin itself, run it from Eclipse and use *Attach to process* on the Eclipse process.
+
 ## Deployment / clinical approval checklist
 
 This is a standalone executable, not an Eclipse plug-in script, so it needs its own

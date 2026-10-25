@@ -51,6 +51,12 @@
     </ProjectReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Lets `dotnet build` (used by VS Code / C# Dev Kit) compile for .NET Framework 4.8 without
+         the .NET Framework 4.8 Developer Pack installed. Build-time only; nothing is shipped. -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
   <!--
     Script.cs (LocateExecutable) looks for ImplantMaterialID.exe next to this plugin's own DLL by
     default. Building the two projects separately won't put it there, so - purely as a local dev
