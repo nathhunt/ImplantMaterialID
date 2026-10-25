@@ -1,0 +1,10 @@
+{
+  // Load the solution (both projects) in the C# Dev Kit Solution Explorer automatically,
+  // instead of prompting to pick one.
+  "dotnet.defaultSolution": "ImplantMaterialID.sln",
+
+  "files.exclude": {
+    "**/bin": true,
+    "**/obj": true
+  }
+}

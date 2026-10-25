@@ -1,0 +1,54 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // "clr" is the .NET Framework (desktop) debugger - the project targets net48, so the
+      // usual "coreclr" type will not work. Windows only.
+      "name": "ImplantMaterialID",
+      "type": "clr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/ImplantMaterialID/bin/x64/Debug/net48/ImplantMaterialID.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}/ImplantMaterialID/bin/x64/Debug/net48",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    },
+    {
+      // Same, but pre-populated the way the Eclipse launcher plugin starts it
+      // (see Services/LaunchArguments.cs). Prompts for the IDs.
+      "name": "ImplantMaterialID (with patient)",
+      "type": "clr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/ImplantMaterialID/bin/x64/Debug/net48/ImplantMaterialID.exe",
+      "args": [
+        "--patient",
+        "${input:patientId}",
+        "--structureset",
+        "${input:structureSetId}"
+      ],
+      "cwd": "${workspaceFolder}/ImplantMaterialID/bin/x64/Debug/net48",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Attach to process",
+      "type": "clr",
+      "request": "attach",
+      "processId": "${command:pickProcess}"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "patientId",
+      "type": "promptString",
+      "description": "Patient ID"
+    },
+    {
+      "id": "structureSetId",
+      "type": "promptString",
+      "description": "Structure set ID"
+    }
+  ]
+}
