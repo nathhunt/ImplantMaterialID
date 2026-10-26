@@ -1,0 +1,20 @@
+<Project>
+  <!--
+    Shared by every project in the repo (MSBuild picks this file up automatically).
+
+    App version: the single place to bump it for a release. It is compiled into both the exe and
+    the Eclipse plugin DLL (file properties > Details), and the app shows it in its window title
+    and header. Use semantic versioning: MAJOR.MINOR.PATCH.
+
+    With the .NET 8 SDK or later, the build also appends the git commit it was built from, e.g.
+    "1.0.0+44a299ca84ab..." in the informational version, shown in the app as "1.0.0 (44a299c)"
+    - so any copy of the exe can be traced back to the exact source it was built from.
+
+    A pre-release/CI build can add a suffix without editing this file:
+      dotnet build -p:Platform=x64 -p:VersionSuffix=rc1      ->  1.0.0-rc1
+  -->
+  <PropertyGroup>
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <Product>Implant Material Identifier</Product>
+  </PropertyGroup>
+</Project>

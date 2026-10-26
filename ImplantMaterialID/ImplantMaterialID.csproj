@@ -15,7 +15,6 @@
     <AssemblyName>ImplantMaterialID</AssemblyName>
     <Nullable>disable</Nullable>
     <LangVersion>latest</LangVersion>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AppConfig>App.config</AppConfig>
 
     <!--

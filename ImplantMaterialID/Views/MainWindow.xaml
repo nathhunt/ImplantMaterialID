@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:services="clr-namespace:ImplantMaterialID.Services"
         mc:Ignorable="d"
         Title="Implant Material Identifier" Height="820" Width="660"
         MinHeight="620" MinWidth="540">
@@ -89,7 +90,10 @@
 
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,12">
-            <TextBlock Text="Implant Material Identifier" FontSize="18" FontWeight="Bold"/>
+            <TextBlock FontSize="18" FontWeight="Bold">
+                <Run Text="Implant Material Identifier"/>
+                <Run Text="{x:Static services:AppVersion.Current}" FontSize="12" FontWeight="Normal" Foreground="#888"/>
+            </TextBlock>
             <TextBlock Text="Estimates whether a metal implant is stainless steel or titanium."
                        TextWrapping="Wrap" Foreground="#555" Margin="0,4,0,0"/>
         </StackPanel>

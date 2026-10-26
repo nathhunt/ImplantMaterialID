@@ -39,7 +39,7 @@ namespace ImplantMaterialID
         private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
             MessageBox.Show(
-                "An unexpected error occurred:\n\n" + e.Exception.Message,
+                "An unexpected error occurred:\n\n" + e.Exception.Message + "\n\nVersion " + AppVersion.Current,
                 "Implant Material Identifier",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);

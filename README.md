@@ -172,6 +172,21 @@ extension (VS Code will offer to install it when you open the folder):
   passes them as `--patient`/`--structureset`, the way the Eclipse plugin does. To debug the
   plugin itself, run it from Eclipse and use *Attach to process* on the Eclipse process.
 
+## Versioning
+
+The app version is set in one place, `VersionPrefix` in `Directory.Build.props` at the repo
+root, and is compiled into both `ImplantMaterialID.exe` and the Eclipse plugin DLL (Windows
+file properties > Details > File version / Product version). The app shows it in the window
+title and header, and in its error dialog. For example, `1.0.0 (44a299c)` means version 1.0.0
+built from git commit `44a299c`. The build adds the commit automatically (.NET 8 SDK or later),
+so the version shown always matches the code the running exe was built from.
+
+To release a new version, bump `VersionPrefix` (MAJOR.MINOR.PATCH), commit, and build from
+that commit. A pre-release build can add a suffix without editing the file:
+`dotnet build -p:Platform=x64 -p:VersionSuffix=rc1` gives `1.0.0-rc1`. Any rebuild changes the
+exe's checksum, so a new version needs re-approving in Script Approval (see below). Record the
+version shown in the app alongside that approval.
+
 ## Deployment / clinical approval checklist
 
 This is a standalone executable, not an Eclipse plug-in script, so it needs its own

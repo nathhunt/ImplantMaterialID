@@ -22,6 +22,7 @@
   <ItemGroup>
     <Compile Include="..\ImplantMaterialID\Models\**\*.cs" Link="Linked\Models\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\ImplantMaterialID\Services\LaunchArguments.cs" Link="Linked\Services\LaunchArguments.cs" />
+    <Compile Include="..\ImplantMaterialID\Services\AppVersion.cs" Link="Linked\Services\AppVersion.cs" />
 
     <!-- The phantom measurements the reference tables were generated from - used to check the
          generated tables still match it and that every phantom rod is classified correctly. -->

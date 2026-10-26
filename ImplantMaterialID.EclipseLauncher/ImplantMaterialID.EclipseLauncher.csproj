@@ -20,7 +20,6 @@
     <AssemblyName>ImplantMaterialID.EclipseLauncher.esapi</AssemblyName>
     <Nullable>disable</Nullable>
     <LangVersion>latest</LangVersion>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 
     <!--
       Same idea as ImplantMaterialID.csproj's EsapiInstallDir: points straight at the installed
