@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- The code under test (Models/ and Services/LaunchArguments.cs) has no ESAPI or WPF
+         dependency, so rather than referencing the ImplantMaterialID project - which would need
+         the ESAPI DLLs installed just to build - the source files are compiled straight into this
+         test assembly (see the Compile items below). That way the tests build and run on any
+         machine, including CI, without Eclipse.
+
+         net48 is the runtime the app actually ships on, so it is tested on Windows; net8.0 lets
+         the same tests run anywhere (Linux/macOS/CI) with just the .NET SDK. -->
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net48;net8.0</TargetFrameworks>
+    <Platforms>x64</Platforms>
+    <RootNamespace>ImplantMaterialID.Tests</RootNamespace>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\ImplantMaterialID\Models\**\*.cs" Link="Linked\Models\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\ImplantMaterialID\Services\LaunchArguments.cs" Link="Linked\Services\LaunchArguments.cs" />
+
+    <!-- The phantom measurements the reference tables were generated from - used to check the
+         generated tables still match it and that every phantom rod is classified correctly. -->
+    <None Include="..\calibration\Combined_HU_percentiles.csv" Link="calibration\Combined_HU_percentiles.csv" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" PrivateAssets="all" />
+    <!-- See ImplantMaterialID.csproj - lets the net48 target build without the Developer Pack. -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

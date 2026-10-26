@@ -102,8 +102,32 @@ failures - the real, non-stub code path is unchanged from what was tested.
 
 The `Models` folder has **no dependency on ESAPI or WPF**, so it can be tested standalone.
 The percentile classifier's logic was checked with a line-for-line Python port against the
-phantom CSV (see "Validation" under "Classification method"); the C# itself has not yet been
-compiled or unit-tested.
+phantom CSV (see "Validation" under "Classification method"), and the C# is covered by the
+unit tests below.
+
+### Unit tests
+
+`ImplantMaterialID.Tests` (xUnit) covers everything that doesn't touch ESAPI or WPF:
+
+- `Percentile` - matches Hyndman & Fan definition 7 (numpy / Excel `PERCENTILE.INC`) values.
+- `TrilinearInterpolator` - exact at grid points, reproduces a multilinear function between
+  them, clamps and flags out-of-range queries.
+- `PercentileReferenceData` - the generated tables match `calibration/Combined_HU_percentiles.csv`
+  value for value, so a CSV change without re-running the generator fails the tests.
+- `ImplantMaterialClassifier` - **every one of the 168 phantom rods is classified correctly by
+  both checks**, plus the cutoffs, margins, disagreement handling and each warning.
+- `MaterialClassificationResult` and `LaunchArguments` (command-line parsing).
+
+The test project compiles the `Models/` source files and `Services/LaunchArguments.cs`
+directly rather than referencing the app project, so it builds without the ESAPI DLLs. Run:
+
+```
+dotnet test ImplantMaterialID.Tests -p:Platform=x64
+```
+
+On Windows this runs the tests on both .NET Framework 4.8 (what the app ships on) and .NET 8;
+elsewhere (e.g. CI on Linux) on .NET 8 only. Any new class in `Models/` is picked up
+automatically; add a `Compile` link in the test `.csproj` for anything else that should be tested.
 
 ## Before you can build
 
@@ -141,6 +165,8 @@ extension (VS Code will offer to install it when you open the folder):
   `Microsoft.NETFramework.ReferenceAssemblies` NuGet package, so the Developer Pack isn't needed.
 - **Build:** `Ctrl+Shift+B` runs `dotnet build ImplantMaterialID.sln -c Debug -p:Platform=x64`.
   From a terminal, always pass `-p:Platform=x64` - the projects only define an x64 platform.
+- **Test:** run the *test* task, or use the Testing panel (beaker icon) to run or debug
+  individual tests.
 - **Debug:** `F5` builds and launches `ImplantMaterialID.exe` under the .NET Framework (`clr`)
   debugger. *ImplantMaterialID (with patient)* prompts for a patient and structure set ID and
   passes them as `--patient`/`--structureset`, the way the Eclipse plugin does. To debug the

@@ -39,6 +39,25 @@
       "problemMatcher": "$msCompile"
     },
     {
+      // Runs the unit tests (ImplantMaterialID.Tests). They don't need ESAPI, so this works on
+      // any machine. The C# Dev Kit Testing panel runs the same tests individually.
+      "label": "test",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/ImplantMaterialID.Tests/ImplantMaterialID.Tests.csproj",
+        "-p:Platform=x64",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
       "label": "clean",
       "type": "process",
       "command": "dotnet",
