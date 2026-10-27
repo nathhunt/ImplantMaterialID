@@ -15,7 +15,6 @@
     <AssemblyName>ImplantMaterialID</AssemblyName>
     <Nullable>disable</Nullable>
     <LangVersion>latest</LangVersion>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AppConfig>App.config</AppConfig>
 
     <!--
@@ -41,6 +40,12 @@
       <HintPath>$(EsapiInstallDir)VMS.TPS.Common.Model.Types.dll</HintPath>
       <Private>False</Private>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Lets `dotnet build` (used by VS Code / C# Dev Kit) compile for .NET Framework 4.8 without
+         the .NET Framework 4.8 Developer Pack installed. Build-time only; nothing is shipped. -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

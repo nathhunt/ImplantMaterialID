@@ -1,0 +1,72 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      // Builds both projects. Platform=x64 is required - ESAPI is x64-only, and the projects
+      // only define an x64 platform (see README "Before you can build").
+      "label": "build",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/ImplantMaterialID.sln",
+        "-c",
+        "Debug",
+        "-p:Platform=x64",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "build (Release)",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/ImplantMaterialID.sln",
+        "-c",
+        "Release",
+        "-p:Platform=x64",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "group": "build",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      // Runs the unit tests (ImplantMaterialID.Tests). They don't need ESAPI, so this works on
+      // any machine. The C# Dev Kit Testing panel runs the same tests individually.
+      "label": "test",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/ImplantMaterialID.Tests/ImplantMaterialID.Tests.csproj",
+        "-p:Platform=x64",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "clean",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "clean",
+        "${workspaceFolder}/ImplantMaterialID.sln",
+        "-p:Platform=x64"
+      ],
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}

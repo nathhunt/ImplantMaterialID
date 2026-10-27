@@ -18,6 +18,9 @@ namespace ImplantMaterialID.Views
         {
             InitializeComponent();
 
+            // Version in the title bar too, so it shows up in screenshots and in the taskbar.
+            Title = $"{Title} {AppVersion.Current}";
+
             // Composition root: swap StaEsapiPatientService() for FakeEsapiPatientService() to
             // run the UI and interpolation logic without a live Eclipse connection. See
             // EsapiStaThread's remarks for why this can't just be Task.Run from here.

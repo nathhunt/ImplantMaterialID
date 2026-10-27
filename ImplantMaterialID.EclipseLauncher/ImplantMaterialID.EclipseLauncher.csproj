@@ -20,7 +20,6 @@
     <AssemblyName>ImplantMaterialID.EclipseLauncher.esapi</AssemblyName>
     <Nullable>disable</Nullable>
     <LangVersion>latest</LangVersion>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 
     <!--
       Same idea as ImplantMaterialID.csproj's EsapiInstallDir: points straight at the installed
@@ -49,6 +48,12 @@
     <ProjectReference Include="..\ImplantMaterialID\ImplantMaterialID.csproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Lets `dotnet build` (used by VS Code / C# Dev Kit) compile for .NET Framework 4.8 without
+         the .NET Framework 4.8 Developer Pack installed. Build-time only; nothing is shipped. -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
   </ItemGroup>
 
   <!--
